@@ -72,6 +72,15 @@ def verify(root):
                 if unquote(uri.fragment) not in heading_anchors(target.read_text()):
                     errors.append(f'{relative}: нет якоря: {destination}')
 
+    mockup = (root / 'docs/mockup-specification.md').read_text()
+    for number, line in enumerate(prose(mockup).splitlines(), 1):
+        # Viewport ranges select a layout; spacing ranges leave a choice undefined.
+        viewport_row = re.match(r'^\| (?:768–1199|360–767) px \|', line)
+        if not viewport_row and re.search(r'\d+(?:\.\d+)?\s*[–—-]\s*\d+(?:\.\d+)?\s*px', line):
+            errors.append(f'mockup-specification.md:{number}: диапазон размера вместо точного правила')
+        if re.search(r'\b(?:(?:примерно|около)\s+\d|(?:не меньше|минимум)\s+\d+(?:[.,]\d+)?\s*px)', line):
+            errors.append(f'mockup-specification.md:{number}: приблизительный численный параметр')
+
     spec = (root / 'docs/01-product-requirements.md').read_text()
     acceptance = (root / 'docs/05-implementation-and-acceptance.md').read_text()
     req = re.findall(r'^\*\*REQ-(\d+)', spec, re.M)
