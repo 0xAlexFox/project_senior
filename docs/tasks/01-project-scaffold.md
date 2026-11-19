@@ -8,13 +8,13 @@
 
 Перед началом этой задачи должна быть завершена [TASK-00: Технический эксперимент](00-technical-spike.md); необходимы её результат и журнал проверок. Это предварительное условие, а не отметка о фактическом выполнении.
 
-Источники: [ТЗ](../01-product-requirements.md), [технологии](../04-technology-decisions.md), [архитектура](../06-application-architecture.md), [модель данных](../07-data-model.md), [API](../03-api.md), [OpenAPI](../../api/openapi.json), [экраны](../02-screens-and-flows.md), [приёмка](../05-implementation-and-acceptance.md).
+Источники: [ТЗ](../product-requirements.md), [технологии](../technology-decisions.md), [архитектура](../application-architecture.md), [модель данных](../data-model.md), [API](../api.md), [OpenAPI](../../api/openapi.json), [экраны](../screens-and-flows.md), [приёмка](../implementation-and-acceptance.md).
 
 Область требований и проверок: REQ-09/15–19; основа для всех AC. Числа и правила берутся из ТЗ, контракты — из API/OpenAPI; эта инструкция не вводит новые требования. При противоречии сначала согласовать документы, затем реализацию.
 
 ## Работа
 
-Расположение кода и схема сервера заданы в [архитектуре приложения](../06-application-architecture.md).
+Расположение кода и схема сервера заданы в [архитектуре приложения](../application-architecture.md).
 
 Создать npm workspaces web/API/worker, контракты и конфигурацию. Реализовать миграции и repositories по модели данных, storage adapter, интерфейс runner и тестовую среду. Разделить миграции приложения и pg-boss. Подготовить .env.example без значений секретов.
 

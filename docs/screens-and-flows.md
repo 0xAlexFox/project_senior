@@ -1,8 +1,8 @@
 # Экраны, блоки и сценарии
 
-Версия 0.3 · 19 ноября 2026 г. · Основные правила и числа: [ТЗ](01-product-requirements.md).
+Версия 0.3 · 19 ноября 2026 г. · Основные правила и числа: [ТЗ](product-requirements.md).
 
-Зависимости реализации: [архитектура](06-application-architecture.md), [модель данных](07-data-model.md), [задачи и приёмка](05-implementation-and-acceptance.md). Правила и численные лимиты задаёт ТЗ; схемы внешнего API — [OpenAPI](../api/openapi.json).
+Зависимости реализации: [архитектура](application-architecture.md), [модель данных](data-model.md), [задачи и приёмка](implementation-and-acceptance.md). Правила и численные лимиты задаёт ТЗ; схемы внешнего API — [OpenAPI](../api/openapi.json).
 
 ## 1. Визуальная система
 

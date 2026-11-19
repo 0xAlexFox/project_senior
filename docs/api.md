@@ -2,7 +2,7 @@
 
 Версия 0.2 · 17 ноября 2026 г. Контракт внешнего API: [OpenAPI 3.1](../api/openapi.json). Базовый пример `https://converter.example` — зарезервированное вымышленное имя, не работающий сервис.
 
-Зависимости реализации: [архитектура](06-application-architecture.md), [модель данных](07-data-model.md), [задачи и приёмка](05-implementation-and-acceptance.md). Правила и численные лимиты задаёт ТЗ; схемы внешнего API — [OpenAPI](../api/openapi.json).
+Зависимости реализации: [архитектура](application-architecture.md), [модель данных](data-model.md), [задачи и приёмка](implementation-and-acceptance.md). Правила и численные лимиты задаёт ТЗ; схемы внешнего API — [OpenAPI](../api/openapi.json).
 
 ## 1. Два способа доступа
 

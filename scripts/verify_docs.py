@@ -42,9 +42,12 @@ def verify(root):
         relative = path.relative_to(root)
         text = path.read_text()
         if relative.parts[0] == 'docs' and path.name != 'README.md':
-            pattern = (r'IT-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md'
-                       if 'history' in relative.parts else
-                       r'(?:\d{2}-)?[a-z0-9]+(?:-[a-z0-9]+)*\.md')
+            if relative.parent == Path('docs/history'):
+                pattern = r'IT-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md'
+            elif relative.parent == Path('docs/tasks'):
+                pattern = r'\d{2}-[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.md'
+            else:
+                pattern = r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.md'
             if not re.fullmatch(pattern, path.name):
                 errors.append(f'{relative}: имя не соответствует docs/README.md')
         if len(re.findall(r'^```', text, re.M)) % 2:
@@ -81,8 +84,8 @@ def verify(root):
         if re.search(r'\b(?:(?:примерно|около)\s+\d|(?:не меньше|минимум)\s+\d+(?:[.,]\d+)?\s*px)', line):
             errors.append(f'mockup-specification.md:{number}: приблизительный численный параметр')
 
-    spec = (root / 'docs/01-product-requirements.md').read_text()
-    acceptance = (root / 'docs/05-implementation-and-acceptance.md').read_text()
+    spec = (root / 'docs/product-requirements.md').read_text()
+    acceptance = (root / 'docs/implementation-and-acceptance.md').read_text()
     req = re.findall(r'^\*\*REQ-(\d+)', spec, re.M)
     ac = re.findall(r'^\| AC-(\d+) \|', acceptance, re.M)
     if req != [f'{n:02d}' for n in range(1, 21)]:
@@ -122,7 +125,7 @@ def verify(root):
         walk(document)
 
     api = json.loads((root / 'api/openapi.json').read_text())
-    api_doc = (root / 'docs/03-api.md').read_text().split('## 2. Внешние endpoints')[1].split('## 3.')[0]
+    api_doc = (root / 'docs/api.md').read_text().split('## 2. Внешние endpoints')[1].split('## 3.')[0]
     documented = {(method.lower(), path) for method, path in
                   re.findall(r'^\| `(GET|POST|PUT|PATCH|DELETE) ([^`]+)` \|', api_doc, re.M)}
     contracted = {(method, path) for path, item in api['paths'].items()
