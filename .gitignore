@@ -5,6 +5,8 @@
 !.env.example
 *.log
 .DS_Store
+__pycache__/
+*.pyc
 
 # Будущие зависимости, сборки и приватные файлы приложения
 node_modules/

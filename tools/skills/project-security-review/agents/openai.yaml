@@ -1,0 +1,6 @@
+interface:
+  display_name: "Проверка безопасности проектов"
+  short_description: "Аудит кода и контроль безопасности перед слиянием"
+  default_prompt: "Используй $project-security-review: проверь безопасность проекта или изменений перед слиянием, укажи доказательства, проверки и блокирующие проблемы."
+policy:
+  allow_implicit_invocation: true
