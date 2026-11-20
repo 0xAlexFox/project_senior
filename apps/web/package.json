@@ -1,0 +1,22 @@
+{
+  "name": "@converter/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.19.0 <25"
+  },
+  "dependencies": {
+    "vue": "3.5.46",
+    "vue-router": "4.6.5",
+    "@converter/contracts": "0.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.11",
+    "@vitest/coverage-v8": "5.1.1",
+    "@vue/test-utils": "2.6.0",
+    "jsdom": "31.0.1",
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
+  }
+}

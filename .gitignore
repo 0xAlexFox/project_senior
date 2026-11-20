@@ -11,6 +11,9 @@ __pycache__/
 # Будущие зависимости, сборки и приватные файлы приложения
 node_modules/
 dist/
+coverage/
+test-results/
+playwright-report/
 /var/
 /storage/
 

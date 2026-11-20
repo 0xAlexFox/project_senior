@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "include": ["apps/**/*.js", "apps/**/*.vue", "packages/**/*.js"],
+  "exclude": ["node_modules", ".local", "**/dist", "**/coverage"]
+}

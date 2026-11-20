@@ -1,0 +1,43 @@
+{
+  "name": "converter",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "File converter workspace foundation; application source is not implemented",
+  "packageManager": "npm@12.0.2",
+  "engines": {
+    "node": ">=24.19.0 <25",
+    "npm": ">=12.0.2 <13"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "npm run check:docs && npm run check:deps && npm run format:check",
+    "check:docs": "python3 scripts/verify_docs.py",
+    "check:deps": "npm ls --all",
+    "format:check": "prettier --check package.json 'apps/*/package.json' 'packages/*/package.json' .prettierrc.json jsconfig.json compose.yaml",
+    "format": "prettier --write package.json 'apps/*/package.json' 'packages/*/package.json' .prettierrc.json jsconfig.json compose.yaml",
+    "audit:dependencies": "npm audit --audit-level=moderate",
+    "db:config": "docker compose config --quiet",
+    "db:up": "docker compose up -d --wait db",
+    "db:stop": "docker compose stop db"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
+    "concurrently": "10.0.7",
+    "eslint": "10.15.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-vue": "10.12.1",
+    "globals": "17.14.0",
+    "node-pg-migrate": "9.0.0",
+    "prettier": "3.10.1",
+    "vue-eslint-parser": "10.4.2"
+  },
+  "overrides": {
+    "glob": "14.0.6",
+    "minimatch@>=7.0.0 <11.0.1": "11.0.9"
+  }
+}
