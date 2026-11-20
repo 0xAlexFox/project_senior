@@ -17,6 +17,7 @@
 | [.npmrc](../.npmrc) | Официальный registry, exact-save, engine-strict, запрет install scripts; TLS и peer-проверки не отключаются |
 | [.nvmrc](../.nvmrc) | Node.js 24.19.0; npm 12.0.2 закреплён в packageManager |
 | [.editorconfig](../.editorconfig), [.gitattributes](../.gitattributes) | UTF-8, LF и правила текстовых/бинарных файлов |
+| [.vscode/settings.json](../.vscode/settings.json) | Python-терминал VS Code использует локальный .env; в Git хранится только переключатель, без значений переменных |
 | [.prettierrc.json](../.prettierrc.json), [.prettierignore](../.prettierignore) | Формат декларативных настроек и исключение локальных данных |
 | [jsconfig.json](../jsconfig.json) | Настройки редактора для будущих JavaScript ES modules; это не сборщик и не обещание пройденного typecheck |
 | [compose.yaml](../compose.yaml) | Только локальная PostgreSQL для разработки, без приложения/runner |
