@@ -8,25 +8,48 @@ const login = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const submitted = ref(false)
+const edited = ref({ login: false, password: false })
+const touched = ref({ login: false, password: false })
 const message = ref('')
 const loginError = computed(() =>
-  !submitted.value
+  !submitted.value && !touched.value.login
     ? ''
     : !login.value
       ? 'Введите логин.'
-      : !/^[a-z0-9_]{3,32}$/.test(login.value)
-        ? 'Логин: 3–32 символа a–z, 0–9 или _.'
+      : login.value.length < 3 ||
+          login.value.length > 32 ||
+          /[^a-z0-9_]/i.test(login.value)
+        ? 'Логин: 3–32 латинские буквы, цифры или _. Регистр не важен.'
         : '',
 )
+// REQ-08 counts Unicode code points, not UTF-16 code units.
+// Bound the scan: any value above 128 is invalid; never trim/normalize the secret.
+const passwordLength = computed(() => {
+  let length = 0
+  for (const _character of password.value) {
+    length += 1
+    if (length > 128) break
+  }
+  return length
+})
 const passwordError = computed(() =>
-  !submitted.value
+  !submitted.value && !touched.value.password
     ? ''
     : !password.value
       ? 'Введите пароль.'
-      : password.value.length < 15 || password.value.length > 128
+      : passwordLength.value < 15 || passwordLength.value > 128
         ? 'Пароль должен содержать от 15 до 128 символов.'
         : '',
 )
+function onFieldBlur(event) {
+  // Let a button receive its click before validation can move it in the layout.
+  if (event.relatedTarget instanceof HTMLButtonElement) return
+  touched.value = { ...edited.value }
+}
+function togglePassword() {
+  showPassword.value = !showPassword.value
+  touched.value = { ...edited.value }
+}
 function submit() {
   submitted.value = true
   message.value = ''
@@ -37,7 +60,10 @@ function submit() {
   // Deliberately no fetch, auth cookie, persistence, or simulated login.
   message.value = 'Вход пока не подключён. Логин и пароль никуда не отправлены.'
   password.value = ''
+  showPassword.value = false
   submitted.value = false
+  edited.value = { login: false, password: false }
+  touched.value = { login: false, password: false }
 }
 </script>
 
@@ -49,6 +75,8 @@ function submit() {
         v-model="login"
         name="username"
         class="control"
+        @input="edited.login = true"
+        @blur="onFieldBlur"
         autocomplete="username"
         autocapitalize="none"
         :spellcheck="false"
@@ -69,7 +97,12 @@ function submit() {
         name="password"
         class="control"
         :type="showPassword ? 'text' : 'password'"
+        @input="edited.password = true"
+        @blur="onFieldBlur"
         autocomplete="current-password"
+        autocapitalize="none"
+        autocorrect="off"
+        :spellcheck="false"
         required
         :aria-invalid="field.invalid"
         :aria-describedby="field.describedBy"
@@ -80,7 +113,8 @@ function submit() {
       type="button"
       :aria-pressed="showPassword"
       aria-controls="password"
-      @click="showPassword = !showPassword"
+      @click="togglePassword"
+      @blur="onFieldBlur"
     >
       {{ showPassword ? 'Скрыть пароль' : 'Показать пароль' }}
     </button>
