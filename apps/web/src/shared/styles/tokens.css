@@ -1,0 +1,76 @@
+/* Source: docs/mockup-specification.md §§3–5. Theme follows OS preference. */
+@font-face {
+  font-family: Inter;
+  src: url('/fonts/Inter-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  color-scheme: dark;
+  --color-canvas: #0a0a0a;
+  --color-surface: #161616;
+  --color-surface-raised: #202020;
+  --color-text: #ededed;
+  --color-text-secondary: #c2c2c2;
+  --color-text-muted: #a3a3a3;
+  --color-border: #393939;
+  --color-control-border: #777777;
+  --color-action: #ffffff;
+  --color-on-action: #161616;
+  --color-action-hover: #e5e5e5;
+  --color-focus: #ffffff;
+  --color-danger: #ffb4a9;
+  --color-warning: #f4d39a;
+  --hero-gradient: linear-gradient(
+    115deg,
+    #bd7545 0%,
+    #915b66 36%,
+    #3652a0 70%,
+    #18385c 100%
+  );
+  --font-body: Inter, system-ui, sans-serif;
+  --font-code:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --section-gap: 72px;
+  --radius-control: 10px;
+  --radius-panel: 24px;
+  --radius-hero: 40px;
+  --radius-pill: 9999px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --color-canvas: #f5f6f8;
+    --color-surface: #ffffff;
+    --color-surface-raised: #ebedf0;
+    --color-text: #17191d;
+    --color-text-secondary: #454b55;
+    --color-text-muted: #565e6b;
+    --color-border: #cdd2da;
+    --color-control-border: #7a828e;
+    --color-action: #20242b;
+    --color-on-action: #ffffff;
+    --color-action-hover: #333a45;
+    --color-focus: #20242b;
+    --color-danger: #a52a20;
+    --color-warning: #80500b;
+    --hero-gradient: linear-gradient(
+      115deg,
+      #f3d9c8 0%,
+      #ebd9df 36%,
+      #d9e1f5 70%,
+      #d6e5f0 100%
+    );
+  }
+}

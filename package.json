@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "File converter workspace foundation; application source is not implemented",
+  "description": "File converter monorepo with Vue frontend preview",
   "packageManager": "npm@12.0.2",
   "engines": {
     "node": ">=24.19.0 <25",
@@ -14,7 +14,7 @@
     "packages/*"
   ],
   "scripts": {
-    "check": "npm run check:docs && npm run check:deps && npm run format:check",
+    "check": "npm run check:docs && npm run check:deps && npm run format:check && npm run format:web:check",
     "check:docs": "python3 scripts/verify_docs.py",
     "check:deps": "npm ls --all",
     "format:check": "prettier --check package.json 'apps/*/package.json' 'packages/*/package.json' .prettierrc.json jsconfig.json compose.yaml .vscode/settings.json",
@@ -22,7 +22,13 @@
     "audit:dependencies": "npm audit --audit-level=moderate",
     "db:config": "docker compose config --quiet",
     "db:up": "docker compose up -d --wait db",
-    "db:stop": "docker compose stop db"
+    "db:stop": "docker compose stop db",
+    "dev:web": "npm run dev --workspace @converter/web",
+    "build:web": "npm run build --workspace @converter/web",
+    "preview:web": "npm run preview --workspace @converter/web",
+    "format:web:check": "prettier --check \"apps/web/**/*.{vue,js,html,css}\" playwright.config.js \"tests/e2e/**/*.js\"",
+    "format:web": "prettier --write \"apps/web/**/*.{vue,js,html,css}\" playwright.config.js \"tests/e2e/**/*.js\"",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

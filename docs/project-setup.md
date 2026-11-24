@@ -1,12 +1,12 @@
-# Подготовка проекта без исходников
+# Окружение и запуск проекта
 
-Актуализация: 20 ноября 2026 г. Итерация IT-0014. Подготовлена основа дальнейшей разработки по [архитектуре](application-architecture.md) и [выбранным технологиям](technology-decisions.md). Исходники приложения и примеры не создавались; существующие инструменты Python и контракт OpenAPI сохранены.
+Актуализация: 24 ноября 2026 г. Основа без исходников подготовлена в IT-0014 по [архитектуре](application-architecture.md) и [технологиям](technology-decisions.md). В IT-0017 добавлены начальный frontend, его запуск, сборка и браузерные проверки. Backend, миграции и runner ещё не реализованы; инструменты Python и контракт OpenAPI сохранены.
 
 ## Структура
 
 Шесть приватных npm workspaces с ES modules и общей версией 0.0.0: `apps/web`, `apps/api`, `apps/worker`, `packages/contracts`, `packages/backend`, `packages/conversion`. В manifests нет main/exports и команд запуска, ссылающихся на отсутствующие файлы. Межпакетные зависимости закреплены на локальную версию 0.0.0 и связываются npm workspaces.
 
-Каталоги web разделены на app/pages/features/shared/public; API — plugins и routes auth/app/v1/integrations; worker — jobs/runner/maintenance. Backend содержит modules identity/account/conversions/files, db/queue/storage/integrations/config; conversion — engines/validation. Подготовлены db/migrations, infra/api/web/runner/systemd, tests/integration/e2e/fixtures. Пустые каталоги сохраняются маркерами `.gitkeep`; прикладных JS/Vue/HTML/CSS/SQL, fixtures и Dockerfile нет. Место для будущих тестов не означает существования тестового набора приложения.
+Каталоги web разделены на app/pages/features/shared/public; API — plugins и routes auth/app/v1/integrations; worker — jobs/runner/maintenance. Backend содержит modules identity/account/conversions/files, db/queue/storage/integrations/config; conversion — engines/validation. Подготовлены db/migrations, infra/api/web/runner/systemd, tests/integration/e2e/fixtures. Пустые каталоги сохраняются маркерами `.gitkeep`. В IT-0017 добавлены исходники Vue/JS/HTML/CSS web, конфигурации Vite/Playwright и `tests/e2e/frontend.spec.js`; SQL, backend/worker, Dockerfile и реальные fixtures конвертации ещё отсутствуют.
 
 ## Корневые настройки
 
@@ -77,7 +77,9 @@ Override glob меняет major транзитивного пакета: про
 
 `npm run db:config` проверяет Compose через установленный Docker; `npm run db:up` запускает и ожидает готовности локальной БД; `npm run db:stop` останавливает её без удаления volume. Эти команды требуют Docker Engine с Compose v2 и корректного локального `.env`. Ни одна из них не выполняется как часть npm install/check. Сервисы автоматически не запускаются, удаления данных в scripts нет.
 
-Команд dev/build/test приложения, миграции БД и release пока нет. ESLint/Vite/Vitest/Playwright установлены как инструменты последующей работы; исполняемые JS-конфигурации и исходники добавляются на этапе реализации. Наличие пакета не означает настроенный линтер, тесты или работающий браузерный сценарий.
+В IT-0017 добавлены `npm run dev:web`, `npm run build:web`, `npm run preview:web`, `npm run format:web:check`, `npm run format:web` и `npm run test:e2e`. Vite запускает только web на 127.0.0.1:5173, preview сборки — на 127.0.0.1:4173. Корневой `.env` не читается web-конфигурацией (`envDir: false`). Браузерные тесты запускаются последовательно с одним worker в установленном Google Chrome (`channel: chrome`); приложение открывается по локальному URL, при необходимости тестовый runner запускает Vite сам. Отдельный браузер Playwright не требуется для текущей конфигурации.
+
+В `npm run check` включена проверка формата исходников web, браузерных тестов и Playwright-конфигурации. ESLint и Vitest пока не настроены; существование их пакетов не означает успешного lint/unit-набора. Команд запуска backend/worker, миграций и release ещё нет.
 
 ## Системные зависимости и границы проверки
 
@@ -88,8 +90,16 @@ Override glob меняет major транзитивного пакета: про
 | Docker / Compose / Linux VM | В текущей командной среде отсутствуют; конфигурация проверяется по официальной схеме, контейнеры не запущены |
 | LibreOffice | Целевая ветка 26.8 из спецификации; локального soffice нет, установка и проверка внутри изолированного Linux-runner относятся к TASK-00 |
 | Runner и шрифты | Rootless runtime, UID/GID, лимиты, сеть и конкретный набор/версии шрифтов ещё требуют эксперимента TASK-00; произвольные значения не подставлены |
-| Playwright browsers | npm-пакет закреплён; отдельные браузеры и Linux OS libraries пока не загружены, запуск e2e не заявляется |
+| Браузерные проверки frontend | В IT-0017 использован установленный Google Chrome через Playwright; отдельные браузеры Playwright и Linux OS libraries не устанавливались |
 
 Образ PostgreSQL: [официальные теги](https://hub.docker.com/_/postgres), [multi-platform manifest 18.7-bookworm](https://github.com/docker-library/repo-info/blob/master/repos/postgres/remote/18.7-bookworm.md). Volume монтируется в `/var/lib/postgresql`, как требует официальный образ PostgreSQL 18. Начальная учётная запись БД — локальный администратор для подготовки; перед подключением приложения на TASK-01 создать отдельную ограниченную роль, не использовать bootstrap-администратора в API/worker. Тестовая БД и отдельные роли пока не создавались.
 
-TASK-00 и TASK-01 остаются незавершёнными. Здесь нет доказательства запуска приложения, реальной конвертации, транзакций очереди, сетевой изоляции или миграций. Фактические результаты подготовки сохраняются в [истории IT-0014](history/IT-0014-project-foundation.md).
+TASK-00 и TASK-01 остаются незавершёнными. Запуск и сборка начального frontend проверены в IT-0017; реальная конвертация, транзакции очереди, сетевая изоляция runner и миграции не проверены. Фактические результаты подготовки сохраняются в [истории IT-0014](history/IT-0014-project-foundation.md).
+
+## Начальная реализация frontend — IT-0017
+
+Исторический раздел «Подготовленная структура» выше описывает IT-0014. Сейчас в `apps/web/src` добавлены app/router/layouts, страницы главной и входа, features auth/conversion, общие UI-компоненты и CSS-токены. Vite собирает SPA в `apps/web/dist`. Заглушки `/api-docs`, `/privacy`, регистрации, восстановления и кабинета явно сообщают об отсутствии реализации; неизвестный маршрут показывает 404.
+
+Inter с кириллицей хранится локально в `apps/web/public/fonts/Inter-Variable.ttf` вместе с OFL-лицензией; источник — официальный каталог Google Fonts (`ofl/inter`). Значки перенесены из фактического макета Pixso, их геометрия сохранена. Светлая/тёмная палитры следуют настройке ОС, отдельного переключателя и хранения предпочтения пока нет.
+
+Конфигурация форматов временно берётся из `src/shared/api/preview-formats.js` по ТЗ и API; при подключении backend заменить её на `GET /api/app/formats`. Идентификаторы направлений совпадают с API. Проверка расширения/MIME/размера в браузере — только UX, не проверка фактического содержимого. Выбранный File находится только в памяти вкладки и сохраняется между SPA-переходами; reload его сбрасывает. Форма входа валидирует поля, показывает/скрывает пароль, но не отправляет и не сохраняет credentials, не создаёт сессии. После нажатия показывает сообщение заглушки и очищает пароль.
