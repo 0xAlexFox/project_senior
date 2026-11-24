@@ -44,8 +44,6 @@ def verify(root):
         if relative.parts[0] == 'docs' and path.name != 'README.md':
             if relative.parent == Path('docs/history'):
                 pattern = r'IT-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md'
-            elif relative.parent == Path('docs/tasks'):
-                pattern = r'\d{2}-[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.md'
             else:
                 pattern = r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.md'
             if not re.fullmatch(pattern, path.name):
@@ -92,10 +90,12 @@ def verify(root):
         errors.append('Нарушены определения REQ-01–20')
     if ac != [f'{n:02d}' for n in range(1, 31)]:
         errors.append('Нарушены определения AC-01–30')
-    tasks = sorted((root / 'docs/tasks').glob('*.md'))
-    task_ids = [re.search(r'^# TASK-(\d+)\.', p.read_text()) for p in tasks]
-    if [m.group(1) if m else None for m in task_ids] != [f'{n:02d}' for n in range(7)]:
-        errors.append('Нарушены определения TASK-00–06')
+    plan = (root / 'docs/work-plan.md').read_text()
+    task_ids = re.findall(r'^## TASK-(\d{2})\. ', prose(plan), re.M)
+    if task_ids != [f'{n:02d}' for n in range(7)]:
+        errors.append('Нарушены определения TASK-00–06 в едином плане')
+    if (root / 'docs/tasks').exists():
+        errors.append('Отдельный каталог docs/tasks дублирует единый план')
 
     for path in sorted(p for p in files if p.suffix == '.json'):
         try:
