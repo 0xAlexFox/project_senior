@@ -26,15 +26,16 @@
     "dev:web": "npm run dev --workspace @converter/web",
     "build:web": "npm run build --workspace @converter/web",
     "preview:web": "npm run preview --workspace @converter/web",
-    "format:web:check": "prettier --check \"apps/web/**/*.{vue,js,html,css}\" playwright.config.js \"tests/e2e/**/*.js\"",
-    "format:web": "prettier --write \"apps/web/**/*.{vue,js,html,css}\" playwright.config.js \"tests/e2e/**/*.js\"",
+    "format:web:check": "prettier --check \"apps/web/**/*.{vue,js,html,css}\" \"tests/unit/**/*.js\" playwright.config.js \"tests/e2e/**/*.js\"",
+    "format:web": "prettier --write \"apps/web/**/*.{vue,js,html,css}\" \"tests/unit/**/*.js\" playwright.config.js \"tests/e2e/**/*.js\"",
     "test:e2e": "playwright test",
     "setup:python": "python3 -m venv .local/lint-venv && .local/lint-venv/bin/python -m pip install --only-binary=:all: --requirement requirements-dev.txt",
     "lint": "npm run lint:js && npm run lint:css && npm run lint:python",
     "lint:js": "eslint . --max-warnings 0",
     "lint:fix": "npm run lint:js -- --fix && npm run lint:css -- --fix && npm run lint:python -- --fix",
     "lint:css": "stylelint \"apps/web/src/**/*.css\" --max-warnings 0",
-    "lint:python": ".local/lint-venv/bin/python -m ruff check scripts tools"
+    "lint:python": ".local/lint-venv/bin/python -m ruff check scripts tools",
+    "test:unit:web": "vitest run --config apps/web/vitest.config.js"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

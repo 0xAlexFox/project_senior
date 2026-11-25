@@ -32,7 +32,7 @@
 
 `npm ci` — установка; `npm run dev:web` — открыть `http://127.0.0.1:5173/`; форма входа — `/auth/login`. Сборка — `npm run build:web`, просмотр сборки — `npm run preview:web` на `http://127.0.0.1:4173/`. Для публикации SPA потребуется fallback на `index.html`; публикация этой итерацией не выполняется.
 
-`npm run setup:python` один раз создаёт локальное окружение Ruff (Python 3.10+; macOS/Linux). `npm run check` проверяет документацию, зависимости, формат и все три линтера; `npm run lint` запускает только ESLint, Stylelint и Ruff, `npm run lint:fix` явно применяет доступные безопасные автоисправления; `npm run test:e2e` запускает проверки в установленном Google Chrome, одним worker. При отсутствии Chrome установить его либо отдельно подготовить браузер Playwright и изменить channel. Подробности и ограничения — [окружение](docs/project-setup.md) и [статус](docs/project-status.md).
+`npm run setup:python` один раз создаёт локальное окружение Ruff (Python 3.10+; macOS/Linux). `npm run check` проверяет документацию, зависимости, формат и все три линтера; `npm run lint` запускает только ESLint, Stylelint и Ruff, `npm run lint:fix` явно применяет доступные безопасные автоисправления; `npm run test:unit:web` проверяет логику без браузера; `npm run test:e2e` запускает проверки в установленном Google Chrome, одним worker. При отсутствии Chrome установить его либо отдельно подготовить браузер Playwright и изменить channel. Подробности и ограничения — [окружение](docs/project-setup.md) и [статус](docs/project-status.md).
 
 ## Зависимости и изменения
 
