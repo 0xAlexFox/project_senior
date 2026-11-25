@@ -8,7 +8,7 @@ import {
   enablePreview,
   setDemoJobStatus,
 } from '../../shared/api/demo-client.js'
-import { demoErrors } from '../../shared/api/demo-fixtures.js'
+import { demoErrors, makeDemoFiles } from '../../shared/api/demo-fixtures.js'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
 import SelectField from '../../shared/ui/SelectField.vue'
@@ -50,6 +50,14 @@ async function reset() {
   disablePreview()
   message.value = ''
   await router.push('/')
+}
+function emptyFiles() {
+  demo.files = []
+  if (demo.job?.saveToProfile && demo.job.status === 'succeeded')
+    setDemoJobStatus('deleted')
+}
+function restoreFiles() {
+  demo.files = makeDemoFiles()
 }
 function changeJob() {
   try {
@@ -103,6 +111,7 @@ function changeJob() {
           <select v-model.number="demo.latencyMs" class="control">
             <option :value="150">Обычная</option>
             <option :value="2000">2 секунды</option>
+            <option :value="5000">5 секунд для проверки загрузки</option>
           </select>
         </label>
         <label
@@ -125,6 +134,13 @@ function changeJob() {
           @click="demo.telegram.botConfirmed = true"
           >Подтвердить со стороны учебного бота</BaseButton
         >
+        <div class="actions">
+          <BaseButton variant="text" @click="emptyFiles"
+            >Учебный пустой каталог</BaseButton
+          ><BaseButton variant="text" @click="restoreFiles"
+            >Восстановить учебный каталог</BaseButton
+          >
+        </div>
         <p v-if="message" role="status">{{ message }}</p>
       </div>
     </details>

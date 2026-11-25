@@ -53,7 +53,9 @@ test('резервное восстановление: ограниченный 
   await enable(page, '/auth/recover')
   await page.getByRole('tab', { name: 'Резервный код', exact: true }).click()
   await page.getByLabel('Логин', { exact: true }).fill('demo_user')
-  await page.getByLabel('Резервный код', { exact: true }).fill('DEMO-NOT-VALID')
+  await page
+    .getByRole('textbox', { name: 'Резервный код', exact: true })
+    .fill('DEMO-NOT-VALID')
   await page.getByRole('button', { name: 'Проверить код', exact: true }).click()
   await expect(page).toHaveURL('/auth/reset')
   await page.getByLabel('Пароль', { exact: true }).fill('учебный пароль 123')

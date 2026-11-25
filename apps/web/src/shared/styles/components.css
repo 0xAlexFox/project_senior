@@ -39,6 +39,7 @@
 }
 .base-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 1px;
   border: 1px solid var(--color-border);
@@ -46,7 +47,7 @@
   background: var(--color-surface-raised);
 }
 .base-tabs button {
-  flex: 1 1 0;
+  flex: 1 1 8em;
   min-width: 0;
   min-height: var(--control-height);
   padding: 10px 16px;
@@ -197,7 +198,7 @@ progress {
 }
 .preview-controls summary {
   cursor: pointer;
-  min-height: 32px;
+  min-height: 44px;
 }
 .preview-controls > div {
   margin-top: 16px;

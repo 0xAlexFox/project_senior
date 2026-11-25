@@ -40,6 +40,7 @@ h1,
 h2,
 h3 {
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 h1 {
   font-size: var(--font-page);

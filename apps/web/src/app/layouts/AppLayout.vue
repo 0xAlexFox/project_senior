@@ -25,6 +25,12 @@ watch(
     }
   },
 )
+function closeProfile() {
+  if (profileMenu.value) {
+    profileMenu.value.open = false
+    profileMenu.value.querySelector('summary')?.focus()
+  }
+}
 function signOut() {
   demoApi.signOut()
   menuOpen.value = false
@@ -63,7 +69,7 @@ watch(
         v-if="demo.enabled && demo.viewer"
         ref="profileMenu"
         class="desktop-profile"
-        @keydown.esc="profileMenu.open = false"
+        @keydown.esc="closeProfile"
       >
         <summary class="button button-secondary">Кабинет</summary>
         <div class="panel stack profile-menu">

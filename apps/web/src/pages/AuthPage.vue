@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { demo, demoApi } from '../shared/api/demo-client.js'
 import {
@@ -191,6 +191,13 @@ onBeforeRouteLeave(() =>
       })
     : true,
 )
+watch([codes, done, challenge], async () => {
+  await nextTick()
+  if (disposed) return
+  const heading = document.getElementById('auth-title')
+  heading?.setAttribute('tabindex', '-1')
+  heading?.focus({ preventScroll: true })
+})
 onMounted(() => {
   if (props.mode === 'recover' && route.query.reason === 'expired')
     message.value = 'Срок восстановления истёк. Подтвердите доступ заново.'
@@ -238,6 +245,7 @@ onBeforeUnmount(() => {
         id="recovery-method"
         v-model="method"
         label="Способ восстановления"
+        panel-id="recovery-panel"
         :disabled="busy"
         :options="[
           { value: 'telegram', label: 'Telegram' },
@@ -245,103 +253,112 @@ onBeforeUnmount(() => {
         ]"
         @update:model-value="changeMethod"
       />
-      <InputField
-        v-if="mode === 'register'"
-        id="display-name"
-        v-model="name"
-        label="Имя"
-        :error="errors.name"
-        :disabled="busy"
-        autocomplete="nickname"
-        hint="1–80 символов"
-      />
-      <InputField
-        v-if="mode !== 'reset'"
-        id="auth-login"
-        v-model="login"
-        label="Логин"
-        :error="errors.login"
-        :disabled="busy || challenge"
-        autocomplete="username"
-        autocapitalize="none"
-        :spellcheck="false"
-        hint="3–32 символа: a–z, 0–9, _. Регистр не важен."
-      />
-      <template v-if="mode !== 'recover'">
-        <PasswordField
-          id="new-password"
-          v-model="password"
-          label="Пароль"
-          :error="errors.password"
-          :disabled="busy"
-          autocomplete="new-password"
-          hint="15–128 символов, пробелы допустимы"
-        />
-        <PasswordField
-          id="confirm-password"
-          v-model="confirmation"
-          label="Подтверждение пароля"
-          :error="errors.confirmation"
-          :disabled="busy"
-          autocomplete="new-password"
-        />
-      </template>
-      <template v-else-if="challenge || method === 'backup'">
+      <div
+        class="stack form-stack"
+        :id="mode === 'recover' ? 'recovery-panel' : undefined"
+        :role="mode === 'recover' ? 'tabpanel' : undefined"
+        :aria-labelledby="
+          mode === 'recover' ? 'recovery-method-' + method : undefined
+        "
+      >
         <InputField
-          id="recovery-code"
-          v-model="code"
-          :label="method === 'telegram' ? 'Код Telegram' : 'Резервный код'"
-          :error="errors.code"
+          v-if="mode === 'register'"
+          id="display-name"
+          v-model="name"
+          label="Имя"
+          :error="errors.name"
           :disabled="busy"
-          :inputmode="method === 'telegram' ? 'numeric' : 'text'"
-          autocomplete="one-time-code"
-          :spellcheck="false"
-          autocapitalize="none"
+          autocomplete="nickname"
+          hint="1–80 символов"
         />
-        <p v-if="challenge" class="caption">
-          {{
-            now >= deadline
-              ? 'Срок кода истёк.'
-              : 'Код действует ещё ' +
-                Math.max(0, Math.ceil((deadline - now) / 1000)) +
-                ' с.'
-          }}
-          Не получили код? Используйте резервный.
+        <InputField
+          v-if="mode !== 'reset'"
+          id="auth-login"
+          v-model="login"
+          label="Логин"
+          :error="errors.login"
+          :disabled="busy || challenge"
+          autocomplete="username"
+          autocapitalize="none"
+          :spellcheck="false"
+          hint="3–32 символа: a–z, 0–9, _. Регистр не важен."
+        />
+        <template v-if="mode !== 'recover'">
+          <PasswordField
+            id="new-password"
+            v-model="password"
+            label="Пароль"
+            :error="errors.password"
+            :disabled="busy"
+            autocomplete="new-password"
+            hint="15–128 символов, пробелы допустимы"
+          />
+          <PasswordField
+            id="confirm-password"
+            v-model="confirmation"
+            label="Подтверждение пароля"
+            :error="errors.confirmation"
+            :disabled="busy"
+            autocomplete="new-password"
+          />
+        </template>
+        <template v-else-if="challenge || method === 'backup'">
+          <InputField
+            id="recovery-code"
+            v-model="code"
+            :label="method === 'telegram' ? 'Код Telegram' : 'Резервный код'"
+            :error="errors.code"
+            :disabled="busy"
+            :inputmode="method === 'telegram' ? 'numeric' : 'text'"
+            autocomplete="one-time-code"
+            :spellcheck="false"
+            autocapitalize="none"
+          />
+          <p v-if="challenge" class="caption">
+            {{
+              now >= deadline
+                ? 'Срок кода истёк.'
+                : 'Код действует ещё ' +
+                  Math.max(0, Math.ceil((deadline - now) / 1000)) +
+                  ' с.'
+            }}
+            Не получили код? Используйте резервный.
+          </p>
+          <BaseButton
+            v-if="challenge"
+            variant="text"
+            :disabled="busy || now < resendAt"
+            @click="resend"
+            >Получить новый код{{
+              now < resendAt
+                ? ' через ' + Math.ceil((resendAt - now) / 1000) + ' с.'
+                : ''
+            }}</BaseButton
+          >
+        </template>
+        <p v-if="mode === 'recover'" class="caption">
+          Telegram должен быть подключён заранее. Нового получателя указать
+          нельзя. При потере обоих способов автоматического восстановления нет.
         </p>
+        <RouterLink v-if="mode === 'register'" to="/privacy"
+          >О файлах и конфиденциальности →</RouterLink
+        >
         <BaseButton
-          v-if="challenge"
-          variant="text"
-          :disabled="busy || now < resendAt"
-          @click="resend"
-          >Получить новый код{{
-            now < resendAt
-              ? ' через ' + Math.ceil((resendAt - now) / 1000) + ' с.'
-              : ''
+          type="submit"
+          :loading="busy"
+          :disabled="busy || !!retryIn || (challenge && now >= deadline)"
+          >{{
+            mode === 'register'
+              ? 'Создать аккаунт'
+              : mode === 'reset'
+                ? 'Сохранить новый пароль'
+                : challenge || method === 'backup'
+                  ? 'Проверить код'
+                  : 'Получить код'
           }}</BaseButton
         >
-      </template>
-      <p v-if="mode === 'recover'" class="caption">
-        Telegram должен быть подключён заранее. Нового получателя указать
-        нельзя. При потере обоих способов автоматического восстановления нет.
-      </p>
-      <RouterLink v-if="mode === 'register'" to="/privacy"
-        >О файлах и конфиденциальности →</RouterLink
-      >
-      <BaseButton
-        type="submit"
-        :loading="busy"
-        :disabled="busy || !!retryIn || (challenge && now >= deadline)"
-        >{{
-          mode === 'register'
-            ? 'Создать аккаунт'
-            : mode === 'reset'
-              ? 'Сохранить новый пароль'
-              : challenge || method === 'backup'
-                ? 'Проверить код'
-                : 'Получить код'
-        }}</BaseButton
-      >
-      <RouterLink to="/auth/login">Уже есть аккаунт? Войти →</RouterLink>
+        <RouterLink to="/auth/login">Уже есть аккаунт? Войти →</RouterLink>
+      </div>
     </form>
     <BaseDialog
       :open="leaving"
