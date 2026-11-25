@@ -1,5 +1,6 @@
 // Explicit preview transport. No fetch, credentials, cookies or user file bytes.
 import { reactive } from 'vue'
+import { selectFilesPage } from './file-query.js'
 import { demoAssets } from './demo-assets.js'
 import { previewFormats } from './preview-formats.js'
 import {
@@ -367,14 +368,26 @@ export const demoApi = {
     }),
   files: (options) =>
     respond(() => ({ items: demo.files, quota: getDemoQuota() }), options),
-  deleteFile: (id) =>
+  searchFiles: (criteria, options) =>
+    respond(
+      () => ({
+        ...selectFilesPage(demo.files, criteria),
+        quota: getDemoQuota(),
+      }),
+      options,
+    ),
+  deleteFile: (id, options) =>
     respond(() => {
       const index = demo.files.findIndex((file) => file.id === id)
       if (index < 0) throw new DemoError('NOT_FOUND')
       demo.files.splice(index, 1)
+      if (demo.job?.id === id) {
+        demo.job.deleted = true
+        persist()
+      }
       return { deleted: true, quota: getDemoQuota() }
-    }),
-  fileDownload: (id) =>
+    }, options),
+  fileDownload: (id, options) =>
     respond(() => {
       const file = demo.files.find((item) => item.id === id)
       if (!file) throw new DemoError('NOT_FOUND')
@@ -382,7 +395,7 @@ export const demoApi = {
         ...demoAssets[file.format],
         fileName: `учебный-${file.fileName}`,
       }
-    }),
+    }, options),
   reauth: () =>
     respond(() => {
       demo.reauthUntil = Date.now() + 5 * 60_000

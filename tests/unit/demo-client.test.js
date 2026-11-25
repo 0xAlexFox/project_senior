@@ -85,3 +85,17 @@ test('даты: реальное преобразование зоны, неиз
   expect(formatDate('not-a-date')).toBe('Дата неизвестна')
   expect(formatDate('2026-02-30T00:00:00Z')).toBe('Дата неизвестна')
 })
+
+test('удаление сохранённого результата немедленно закрывает оба пути скачивания', async () => {
+  const job = await demoApi.createJob('jpg_to_png', true, crypto.randomUUID())
+  setDemoJobStatus('running')
+  setDemoJobStatus('succeeded')
+  await demoApi.deleteFile(job.id)
+  await expect(demoApi.fileDownload(job.id)).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+  })
+  await expect(demoApi.jobDownload(job.id)).rejects.toMatchObject({
+    code: 'RESULT_EXPIRED',
+  })
+  expect((await demoApi.job(job.id)).status).toBe('succeeded')
+})
