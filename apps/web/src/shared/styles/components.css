@@ -186,3 +186,19 @@ progress {
   margin-block: 56px;
   max-width: 720px;
 }
+.preview-banner {
+  margin-top: 16px;
+  font-size: var(--font-caption);
+}
+.preview-controls {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: 16px;
+}
+.preview-controls summary {
+  cursor: pointer;
+  min-height: 32px;
+}
+.preview-controls > div {
+  margin-top: 16px;
+}

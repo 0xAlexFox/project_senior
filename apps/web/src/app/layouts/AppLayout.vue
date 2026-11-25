@@ -5,10 +5,17 @@ import AppIcon from '../../shared/ui/AppIcon.vue'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import AccountLayout from './AccountLayout.vue'
 import { accountLinks } from '../../shared/config/navigation.js'
+import PreviewControls from '../preview/PreviewControls.vue'
+import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
+import { demo, demoApi } from '../../shared/api/demo-client.js'
 const route = useRoute()
 const auth = computed(() => route.path.startsWith('/auth/'))
 const account = computed(() => /^\/account(?:\/|$)/.test(route.path))
 const menuOpen = ref(false)
+function signOut() {
+  demoApi.signOut()
+  menuOpen.value = false
+}
 watch(
   () => route.fullPath,
   () => {
@@ -36,8 +43,10 @@ watch(
       ><span class="mobile-back">Назад</span>
     </RouterLink>
     <template v-else>
-      <RouterLink to="/auth/login" class="button button-secondary desktop-login"
-        >Войти</RouterLink
+      <RouterLink
+        :to="demo.enabled && demo.viewer ? '/account' : '/auth/login'"
+        class="button button-secondary desktop-login"
+        >{{ demo.enabled && demo.viewer ? 'Кабинет' : 'Войти' }}</RouterLink
       >
       <BaseButton
         class="mobile-menu-button"
@@ -64,10 +73,20 @@ watch(
             >{{ link.label }}</RouterLink
           >
         </template>
-        <RouterLink to="/auth/login">Войти</RouterLink>
+        <RouterLink v-if="!demo.viewer" to="/auth/login">Войти</RouterLink>
+        <template v-else
+          ><RouterLink to="/account">Кабинет</RouterLink
+          ><BaseButton variant="text" @click="signOut"
+            >Выйти из учебного кабинета</BaseButton
+          ></template
+        >
       </nav>
     </template>
   </header>
+  <NoticeMessage v-if="demo.enabled" class="preview-banner container"
+    >Учебная версия. Данные вымышлены; сервер, авторизация и конвертация не
+    подключены.</NoticeMessage
+  >
   <main id="main-content" tabindex="-1" :class="{ 'auth-main': auth }">
     <AccountLayout v-if="account"><slot /></AccountLayout>
     <slot v-else />
@@ -76,8 +95,5 @@ watch(
     <RouterLink to="/privacy">Конфиденциальность</RouterLink>
     <RouterLink to="/api-docs">Документация API</RouterLink>
   </footer>
-  <aside class="preview-note container" aria-label="Состояние приложения">
-    Предварительная версия интерфейса. Вход, конвертация и хранение файлов пока
-    не подключены.
-  </aside>
+  <PreviewControls />
 </template>
