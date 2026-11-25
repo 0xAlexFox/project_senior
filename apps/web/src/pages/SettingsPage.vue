@@ -15,8 +15,11 @@ import LoadingState from '../shared/ui/LoadingState.vue'
 import StatusBadge from '../shared/ui/StatusBadge.vue'
 import SensitiveActionDialog from '../features/auth/SensitiveActionDialog.vue'
 import OneTimeCodes from '../features/auth/OneTimeCodes.vue'
+import { useRetryDelay } from '../shared/api/use-retry-delay.js'
+const { remaining: profileRetry, apply: delayProfile } = useRetryDelay()
+const { remaining: passwordRetry, apply: delayPassword } = useRetryDelay()
 const router = useRouter()
-const { data, error, loading, load } = useDemoResource(demoApi.profile)
+const { data, error, loading, load, retryIn } = useDemoResource(demoApi.profile)
 const name = ref(''),
   zone = ref('Europe/Moscow'),
   profileBusy = ref(false),
@@ -90,7 +93,8 @@ watch(data, (value) => {
   }
 })
 async function saveProfile() {
-  if (profileBusy.value || !dirty.value || !data.value) return
+  if (profileBusy.value || profileRetry.value || !dirty.value || !data.value)
+    return
   nameError.value = nameProblem(name.value)
   if (nameError.value) {
     document.getElementById('settings-name')?.focus()
@@ -113,6 +117,7 @@ async function saveProfile() {
     }
   } catch (failure) {
     if (!controller.signal.aborted) {
+      delayProfile(failure)
       profileError.value = failure.message
       if (failure.code === 'SETTINGS_CONFLICT') {
         await load()
@@ -131,7 +136,7 @@ function clearPasswords() {
   passwordSubmitted.value = false
 }
 async function changePassword() {
-  if (passwordBusy.value) return
+  if (passwordBusy.value || passwordRetry.value) return
   passwordSubmitted.value = true
   passwordError.value = ''
   passwordMessage.value = ''
@@ -148,7 +153,10 @@ async function changePassword() {
       passwordMessage.value =
         'Учебный ответ: пароль изменён, остальные сессии завершены. Текущая сессия продолжается.'
   } catch (failure) {
-    if (!controller.signal.aborted) passwordError.value = failure.message
+    if (!controller.signal.aborted) {
+      delayPassword(failure)
+      passwordError.value = failure.message
+    }
   } finally {
     if (!controller.signal.aborted) {
       passwordBusy.value = false
@@ -299,7 +307,7 @@ onBeforeUnmount(() => {
     <LoadingState v-if="loading" />
     <NoticeMessage v-if="error" tone="danger"
       >{{ error }}
-      <BaseButton variant="text" @click="load"
+      <BaseButton variant="text" :disabled="!!retryIn" @click="load"
         >Повторить загрузку настроек</BaseButton
       ></NoticeMessage
     >
@@ -337,7 +345,7 @@ onBeforeUnmount(() => {
         <p v-if="profileMessage" role="status">{{ profileMessage }}</p>
         <BaseButton
           type="submit"
-          :disabled="!dirty || profileBusy || loading"
+          :disabled="!dirty || profileBusy || !!profileRetry || loading"
           :loading="profileBusy"
           >Сохранить изменения</BaseButton
         >
@@ -387,7 +395,11 @@ onBeforeUnmount(() => {
           passwordError
         }}</NoticeMessage>
         <p v-if="passwordMessage" role="status">{{ passwordMessage }}</p>
-        <BaseButton type="submit" variant="secondary" :loading="passwordBusy"
+        <BaseButton
+          type="submit"
+          variant="secondary"
+          :loading="passwordBusy"
+          :disabled="!!passwordRetry"
           >Изменить пароль</BaseButton
         >
       </form>

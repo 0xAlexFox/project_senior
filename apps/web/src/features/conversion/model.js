@@ -139,7 +139,7 @@ function acceptJob(value) {
 function cancelUpload() {
   controller?.abort()
 }
-async function restoreJob() {
+async function restoreJob({ clearFile = false } = {}) {
   if (!demo.enabled || !demo.viewer || job.value || pending.value) return
   const current = epoch
   pending.value = true
@@ -149,8 +149,10 @@ async function restoreJob() {
       ? await demoApi.job(demo.job.id)
       : (await demoApi.activeJobs())[0]
     if (current === epoch) {
-      if (value) acceptJob(value)
-      else {
+      if (value) {
+        if (clearFile) selectedFile.value = null
+        acceptJob(value)
+      } else {
         phase.value = 'idle'
         requestError.value = null
       }

@@ -28,6 +28,8 @@ const {
   resetConversion,
   acceptJob,
 } = useConversionDraft()
+import { useRetryDelay } from '../../shared/api/use-retry-delay.js'
+const { remaining: actionRetry, apply: delayAction } = useRetryDelay()
 const heading = ref(null)
 const busy = ref('')
 const error = ref(null)
@@ -72,7 +74,7 @@ function schedule() {
 }
 async function refresh() {
   clearTimeout(timer)
-  if (!job.value || busy.value) return schedule()
+  if (!job.value || busy.value || actionRetry.value) return schedule()
   controller?.abort()
   controller = new AbortController()
   const request = controller
@@ -87,6 +89,7 @@ async function refresh() {
     }
   } catch (failure) {
     if (!disposed && !request.signal.aborted) {
+      delayAction(failure)
       error.value = failure
       failures++
     }
@@ -98,7 +101,7 @@ async function refresh() {
   }
 }
 async function cancel() {
-  if (busy.value || !job.value || finished.value) return
+  if (busy.value || actionRetry.value || !job.value || finished.value) return
   clearTimeout(timer)
   busy.value = 'cancel'
   const id = job.value.id
@@ -109,7 +112,10 @@ async function cancel() {
       error.value = null
     }
   } catch (failure) {
-    if (!disposed) error.value = failure
+    if (!disposed) {
+      delayAction(failure)
+      error.value = failure
+    }
   } finally {
     if (!disposed) {
       busy.value = ''
@@ -118,7 +124,7 @@ async function cancel() {
   }
 }
 async function download() {
-  if (busy.value || !available.value) return
+  if (busy.value || actionRetry.value || !available.value) return
   busy.value = 'download'
   const id = job.value.id
   try {
@@ -128,7 +134,10 @@ async function download() {
       message.value = 'Скачивание учебного образца передано браузеру.'
     }
   } catch (failure) {
-    if (!disposed) error.value = failure
+    if (!disposed) {
+      delayAction(failure)
+      error.value = failure
+    }
   } finally {
     if (!disposed) {
       busy.value = ''
@@ -274,7 +283,7 @@ onBeforeUnmount(() => {
           «Готово».</NoticeMessage
         >
         <BaseButton
-          :disabled="!available || !!busy"
+          :disabled="!available || !!busy || !!actionRetry"
           :loading="busy === 'download'"
           @click="download"
           >Скачать учебный образец</BaseButton
@@ -290,18 +299,21 @@ onBeforeUnmount(() => {
       <BaseButton
         v-if="!finished"
         variant="secondary"
-        :disabled="!!busy"
+        :disabled="!!busy || !!actionRetry"
         :loading="busy === 'cancel'"
         @click="cancel"
         >{{ busy === 'cancel' ? 'Отменяем…' : 'Отменить задачу' }}</BaseButton
       >
-      <BaseButton variant="text" :disabled="!!busy" @click="refresh"
+      <BaseButton
+        variant="text"
+        :disabled="!!busy || !!actionRetry"
+        @click="refresh"
         >Обновить статус</BaseButton
       >
       <BaseButton
         v-if="finished"
         variant="secondary"
-        :disabled="!!busy"
+        :disabled="!!busy || !!actionRetry"
         @click="resetConversion"
         >Конвертировать другой файл</BaseButton
       >

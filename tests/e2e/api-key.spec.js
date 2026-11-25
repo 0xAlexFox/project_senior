@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 async function enter(page) {
   await page.goto('/')
   await page.getByRole('button', { name: 'Открыть учебный кабинет' }).click()
+  await expect(page).toHaveURL('/account')
   await page.goto('/account/api-key')
   await expect(
     page.getByRole('button', { name: 'Выпустить ключ', exact: true }),
@@ -38,7 +39,9 @@ test('ключ: пароль до первого выпуска, однораз�
     ),
   ).not.toContain('DEMO-NOT-A-VALID')
   await page.getByRole('link', { name: 'Открыть документацию API' }).click()
+  await expect(page).toHaveURL('/api-docs')
   await page.goBack()
+  await expect(page).toHaveURL('/account/api-key')
   await expect(
     page.getByLabel('Полный учебный API-ключ', { exact: true }),
   ).toHaveCount(0)

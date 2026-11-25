@@ -10,7 +10,7 @@ import CopyText from '../shared/ui/CopyText.vue'
 import LoadingState from '../shared/ui/LoadingState.vue'
 import NoticeMessage from '../shared/ui/NoticeMessage.vue'
 import StatusBadge from '../shared/ui/StatusBadge.vue'
-const { data, error, loading, load } = useDemoResource(demoApi.key)
+const { data, error, loading, load, retryIn } = useDemoResource(demoApi.key)
 const action = ref(''),
   secret = ref(''),
   message = ref('')
@@ -75,7 +75,7 @@ onBeforeUnmount(() => {
     <LoadingState v-if="loading" />
     <NoticeMessage v-if="error" tone="danger"
       >{{ error }}
-      <BaseButton variant="text" @click="load"
+      <BaseButton variant="text" :disabled="!!retryIn" @click="load"
         >Повторить загрузку ключа</BaseButton
       ></NoticeMessage
     >

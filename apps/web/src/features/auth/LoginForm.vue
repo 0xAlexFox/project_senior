@@ -1,11 +1,17 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import FormField from '../../shared/ui/FormField.vue'
 import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
 import { demo, demoApi } from '../../shared/api/demo-client.js'
 import { onBeforeUnmount } from 'vue'
+import { safeReturnPath } from '../../shared/config/return-path.js'
+import { useConversionDraft } from '../conversion/model.js'
+import { useRetryDelay } from '../../shared/api/use-retry-delay.js'
+const { remaining: retryIn, apply: delayRetry } = useRetryDelay()
+const { selectedFile } = useConversionDraft()
+const route = useRoute()
 const router = useRouter()
 const busy = ref(false)
 let controller
@@ -63,7 +69,7 @@ function togglePassword() {
   touched.value = { ...edited.value }
 }
 async function submit() {
-  if (busy.value) return
+  if (busy.value || retryIn.value) return
   submitted.value = true
   message.value = ''
   if (loginError.value || passwordError.value) {
@@ -75,9 +81,18 @@ async function submit() {
     try {
       controller = new AbortController()
       await demoApi.signIn({ signal: controller.signal })
-      if (!disposed) await router.push('/account')
+      if (!disposed)
+        await router.push(
+          safeReturnPath(
+            route.query.next,
+            selectedFile.value ? '/' : '/account',
+          ),
+        )
     } catch (error) {
-      if (!disposed) message.value = error.message
+      if (!disposed) {
+        message.value = error.message
+        delayRetry(error)
+      }
     } finally {
       if (!disposed) {
         busy.value = false
@@ -151,11 +166,12 @@ async function submit() {
     >
       {{ showPassword ? 'Скрыть пароль' : 'Показать пароль' }}
     </button>
+    <p v-if="retryIn" role="status">Повтор через {{ retryIn }} с.</p>
     <NoticeMessage v-if="message">{{ message }}</NoticeMessage>
     <BaseButton
       class="full-width"
       type="submit"
-      :disabled="busy"
+      :disabled="busy || !!retryIn"
       :loading="busy"
       >Войти</BaseButton
     >

@@ -14,6 +14,8 @@ import BaseTabs from '../shared/ui/BaseTabs.vue'
 import NoticeMessage from '../shared/ui/NoticeMessage.vue'
 import OneTimeCodes from '../features/auth/OneTimeCodes.vue'
 import BaseDialog from '../shared/ui/BaseDialog.vue'
+import { useRetryDelay } from '../shared/api/use-retry-delay.js'
+const { remaining: retryIn, apply: delayRetry } = useRetryDelay()
 const props = defineProps({ mode: { type: String, required: true } })
 const router = useRouter()
 const route = useRoute()
@@ -89,7 +91,7 @@ function changeMethod() {
   failure.value = ''
 }
 async function submit() {
-  if (busy.value) return
+  if (busy.value || retryIn.value) return
   submitted.value = true
   failure.value = ''
   message.value = ''
@@ -134,6 +136,7 @@ async function submit() {
     }
   } catch (error) {
     if (!disposed) {
+      delayRetry(error)
       failure.value = error.message
       if (method.value === 'telegram' && attempts >= 5) {
         challenge.value = false
@@ -152,7 +155,7 @@ async function submit() {
   }
 }
 async function finish() {
-  if (busy.value) return
+  if (busy.value || retryIn.value) return
   busy.value = true
   try {
     await demoApi.confirmCodes(options)
@@ -216,6 +219,7 @@ onBeforeUnmount(() => {
       >Формы работают на учебных ответах. Не вводите настоящие пароли и
       коды.</NoticeMessage
     >
+    <p v-if="retryIn" role="status">Повтор через {{ retryIn }} с.</p>
     <NoticeMessage v-if="failure" tone="danger">{{ failure }}</NoticeMessage>
     <NoticeMessage v-if="message">{{ message }}</NoticeMessage>
     <template v-if="done"
@@ -326,7 +330,7 @@ onBeforeUnmount(() => {
       <BaseButton
         type="submit"
         :loading="busy"
-        :disabled="busy || (challenge && now >= deadline)"
+        :disabled="busy || !!retryIn || (challenge && now >= deadline)"
         >{{
           mode === 'register'
             ? 'Создать аккаунт'

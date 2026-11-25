@@ -44,7 +44,7 @@ async function enter() {
 }
 function enableForms() {
   enablePreview()
-  demoApi.signOut()
+  demoApi.signOut({ silent: true })
 }
 async function reset() {
   disablePreview()

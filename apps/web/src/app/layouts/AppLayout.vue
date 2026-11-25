@@ -18,7 +18,11 @@ const menuOpen = ref(false)
 watch(
   () => demo.viewer,
   (viewer, previous) => {
-    if (previous && !viewer) clearConversionDraft()
+    if (previous && !viewer) {
+      clearConversionDraft()
+      if (demo.enabled && /^\/account(?:\/|$)/.test(route.path))
+        router.replace({ path: '/auth/login', query: { next: route.path } })
+    }
   },
 )
 function signOut() {
@@ -113,6 +117,13 @@ watch(
   <NoticeMessage v-if="demo.enabled" class="preview-banner container"
     >Учебная версия. Данные вымышлены; сервер, авторизация и конвертация не
     подключены.</NoticeMessage
+  >
+  <NoticeMessage
+    v-if="demo.sessionReason === 'expired'"
+    tone="warning"
+    class="preview-banner container"
+    >Учебная сессия истекла. Войдите снова. Пароли, коды и выбранный исходник
+    очищены; принятую задачу можно открыть из кабинета.</NoticeMessage
   >
   <main id="main-content" tabindex="-1" :class="{ 'auth-main': auth }">
     <AccountLayout v-if="account"><slot /></AccountLayout>

@@ -26,6 +26,7 @@ const initial = storedPreview()
 export const demo = reactive({
   enabled: initial.enabled === true,
   viewer: initial.enabled === true && initial.viewer === true,
+  sessionReason: '',
   online: true,
   nextError: '',
   latencyMs: 150,
@@ -69,7 +70,11 @@ export class DemoError extends Error {
   }
 }
 
+let previewGeneration = 0
 let knownJobId = null
+export function getPreviewJobId() {
+  return knownJobId
+}
 export function rememberPreviewJob(id) {
   knownJobId = id
   persist()
@@ -105,12 +110,17 @@ function persist() {
 }
 
 export function enablePreview() {
+  previewGeneration++
+  demo.sessionReason = ''
   demo.enabled = true
   demo.viewer = true
   demo.message = ''
   persist()
 }
 export function disablePreview() {
+  previewGeneration++
+  knownJobId = null
+  demo.sessionReason = ''
   demo.enabled = false
   demo.viewer = false
   demo.job = null
@@ -145,6 +155,7 @@ async function respond(
   { signal, publicAction = false, operation = '' } = {},
 ) {
   if (!demo.enabled) throw new DemoError('PREVIEW_DISABLED')
+  const generation = previewGeneration
   const failure =
     demo.nextError === 'KEY_RESPONSE_LOST' && operation !== 'key-issue'
       ? ''
@@ -162,11 +173,14 @@ async function respond(
     }, demo.latencyMs)
     signal?.addEventListener('abort', cancel, { once: true })
   })
-  if (signal?.aborted) throw new DOMException('Отменено', 'AbortError')
+  if (signal?.aborted || generation !== previewGeneration)
+    throw new DOMException('Учебный сеанс изменился', 'AbortError')
   if (!demo.enabled) throw new DemoError('PREVIEW_DISABLED')
   if (!demo.online) throw new DemoError('NETWORK_ERROR')
   if (failure && !['KEY_RESPONSE_LOST', 'RESPONSE_LOST'].includes(failure)) {
     if (failure === 'SESSION_EXPIRED') {
+      previewGeneration++
+      demo.sessionReason = 'expired'
       demo.viewer = false
       demo.reauthUntil = null
       persist()
@@ -435,12 +449,15 @@ export const demoApi = {
     respond(
       () => {
         demo.viewer = true
+        demo.sessionReason = ''
         persist()
         return { demo: true }
       },
       { ...options, publicAction: true },
     ),
-  signOut: () => {
+  signOut: ({ silent = false } = {}) => {
+    previewGeneration++
+    demo.sessionReason = silent ? '' : 'signed-out'
     demo.viewer = false
     demo.reauthUntil = null
     persist()

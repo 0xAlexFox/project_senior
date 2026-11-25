@@ -4,6 +4,8 @@ import { demoApi } from '../../shared/api/demo-client.js'
 import { passwordProblem } from './validation.js'
 import BaseDialog from '../../shared/ui/BaseDialog.vue'
 import PasswordField from '../../shared/ui/PasswordField.vue'
+import { useRetryDelay } from '../../shared/api/use-retry-delay.js'
+const { remaining: retryIn, apply: delayRetry } = useRetryDelay()
 const props = defineProps({
   open: { type: Boolean, required: true },
   id: { type: String, required: true },
@@ -32,7 +34,8 @@ function clear() {
 }
 watch(() => props.open, clear)
 async function confirm() {
-  if (busy.value || !props.open || props.confirmDisabled) return
+  if (busy.value || !props.open || props.confirmDisabled || retryIn.value)
+    return
   fieldError.value = passwordProblem(password.value)
   if (fieldError.value) {
     document.getElementById(props.id + '-password')?.focus()
@@ -53,6 +56,7 @@ async function confirm() {
   } catch (failure) {
     if (!disposed && current === generation && props.open) {
       error.value = failure.message
+      delayRetry(failure)
       failure.stage = stage
       emit('failure', failure)
     }
@@ -78,7 +82,7 @@ onBeforeUnmount(() => {
     :danger="danger"
     :busy="busy"
     :error="error"
-    :confirm-disabled="confirmDisabled"
+    :confirm-disabled="confirmDisabled || !!retryIn"
     @close="$emit('close')"
     @confirm="confirm"
   >
@@ -90,6 +94,7 @@ onBeforeUnmount(() => {
       :error="fieldError"
       :disabled="busy"
     />
+    <p v-if="retryIn" role="status">Повтор через {{ retryIn }} с.</p>
     <slot />
   </BaseDialog>
 </template>

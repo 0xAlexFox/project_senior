@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test'
 test('оболочка кабинета: активный раздел и мобильная навигация', async ({
   page,
 }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Открыть учебный кабинет' }).click()
   await page.goto('/account/files')
   const sidebar = page.getByRole('navigation', { name: 'Разделы кабинета' })
   await expect(

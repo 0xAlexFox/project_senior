@@ -1,13 +1,13 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useConversionDraft, formatBytes } from './model.js'
 import ConversionJobCard from './ConversionJobCard.vue'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import AppIcon from '../../shared/ui/AppIcon.vue'
 import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
 import BaseTabs from '../../shared/ui/BaseTabs.vue'
-import { demo, demoApi } from '../../shared/api/demo-client.js'
+import { demo, demoApi, getPreviewJobId } from '../../shared/api/demo-client.js'
 import { previewFormats } from '../../shared/api/preview-formats.js'
 const {
   selectedFile,
@@ -26,6 +26,9 @@ const {
   restoreJob,
 } = useConversionDraft()
 const router = useRouter()
+const route = useRoute()
+const reloaded =
+  performance.getEntriesByType('navigation')[0]?.type === 'reload'
 const input = ref(null)
 const dragging = ref(false)
 const images = computed(() => direction.value.category === 'images')
@@ -62,7 +65,11 @@ async function loadConfig() {
 }
 onMounted(() => {
   loadConfig()
-  if (demo.enabled && demo.viewer && demo.job) restoreJob()
+  if (demo.enabled && demo.viewer) {
+    if (typeof route.query.job === 'string' && route.query.job === demo.job?.id)
+      restoreJob({ clearFile: true })
+    else if (getPreviewJobId()) restoreJob()
+  }
 })
 watch(() => demo.enabled, loadConfig)
 onBeforeUnmount(() => configController?.abort())
@@ -90,6 +97,9 @@ function submit() {
     novalidate
     @submit.prevent="submit"
   >
+    <NoticeMessage v-if="reloaded && !selectedFile"
+      >После перезагрузки исходный файл нужно выбрать заново.</NoticeMessage
+    >
     <BaseTabs
       id="conversion-tools"
       v-model="category"

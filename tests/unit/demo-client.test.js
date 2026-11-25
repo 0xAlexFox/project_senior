@@ -118,3 +118,12 @@ test('отключение Telegram требует подтверждённый 
   await demoApi.disconnectTelegram()
   expect(demo.telegram.status).toBe('disconnected')
 })
+
+test('старый ответ не изменяет заново включённый учебный сеанс', async () => {
+  demo.latencyMs = 20
+  const pending = demoApi.updateSaving(true, 1)
+  disablePreview()
+  enablePreview()
+  await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+  expect(demo.saveToProfile).toBe(false)
+})

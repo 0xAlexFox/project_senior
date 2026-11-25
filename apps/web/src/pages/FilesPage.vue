@@ -30,20 +30,24 @@ const selected = ref(null),
   writeError = ref(''),
   message = ref(''),
   heading = ref(null)
+import { useRetryDelay } from '../shared/api/use-retry-delay.js'
+const { remaining: writeRetry, apply: delayWrite } = useRetryDelay()
 const controller = new AbortController()
 let debounce
-const { data, error, loading, load } = useDemoResource(async (options) => {
-  const result = await demoApi.searchFiles(
-    { ...normalizeFileQuery(route.query), query: query.value },
-    options,
-  )
-  if (
-    !options.signal.aborted &&
-    result.page !== normalizeFileQuery(route.query).page
-  )
-    await router.replace({ query: urlQuery(result.page) })
-  return result
-})
+const { data, error, loading, load, retryIn } = useDemoResource(
+  async (options) => {
+    const result = await demoApi.searchFiles(
+      { ...normalizeFileQuery(route.query), query: query.value },
+      options,
+    )
+    if (
+      !options.signal.aborted &&
+      result.page !== normalizeFileQuery(route.query).page
+    )
+      await router.replace({ query: urlQuery(result.page) })
+    return result
+  },
+)
 const pages = computed(() =>
   Math.max(1, Math.ceil((data.value?.total || 0) / 20)),
 )
@@ -92,7 +96,7 @@ function closeDelete() {
   }
 }
 async function remove() {
-  if (busy.value || !selected.value) return
+  if (busy.value || writeRetry.value || !selected.value) return
   busy.value = 'delete'
   writeError.value = ''
   message.value = ''
@@ -111,13 +115,16 @@ async function remove() {
       (next && document.getElementById('delete-' + next.id)) || heading.value
     focusTarget?.focus()
   } catch (failure) {
-    if (!controller.signal.aborted) writeError.value = failure.message
+    if (!controller.signal.aborted) {
+      delayWrite(failure)
+      writeError.value = failure.message
+    }
   } finally {
     if (!controller.signal.aborted) busy.value = ''
   }
 }
 async function download(file) {
-  if (busy.value) return
+  if (busy.value || writeRetry.value) return
   busy.value = file.id
   writeError.value = ''
   message.value = ''
@@ -130,7 +137,10 @@ async function download(file) {
       message.value = 'Скачивание независимого DEMO-образца передано браузеру.'
     }
   } catch (failure) {
-    if (!controller.signal.aborted) writeError.value = failure.message
+    if (!controller.signal.aborted) {
+      delayWrite(failure)
+      writeError.value = failure.message
+    }
   } finally {
     if (!controller.signal.aborted) busy.value = ''
   }
@@ -157,7 +167,7 @@ onBeforeUnmount(() => {
       v-model="search"
       label="Поиск по имени"
       :error="searchError"
-      :disabled="!!busy"
+      :disabled="!!busy || !!writeRetry"
       hint="Текст поиска остаётся в этой вкладке и не попадает в адрес страницы."
       type="search"
       maxlength="400"
@@ -168,7 +178,7 @@ onBeforeUnmount(() => {
         id="file-format"
         v-model="format"
         label="Формат"
-        :disabled="!!busy"
+        :disabled="!!busy || !!writeRetry"
         :options="[
           { value: '', label: 'Все форматы' },
           ...['png', 'jpg', 'pdf'].map((value) => ({
@@ -182,7 +192,7 @@ onBeforeUnmount(() => {
         id="file-source"
         v-model="source"
         label="Источник"
-        :disabled="!!busy"
+        :disabled="!!busy || !!writeRetry"
         :options="[
           { value: '', label: 'Сайт и API' },
           { value: 'web', label: 'Сайт' },
@@ -194,7 +204,7 @@ onBeforeUnmount(() => {
         id="file-sort"
         v-model="sort"
         label="Сортировка"
-        :disabled="!!busy"
+        :disabled="!!busy || !!writeRetry"
         :options="[
           { value: 'newest', label: 'Сначала новые' },
           { value: 'oldest', label: 'Сначала старые' },
@@ -205,7 +215,7 @@ onBeforeUnmount(() => {
     <LoadingState v-if="loading" />
     <NoticeMessage v-if="error" tone="danger"
       >{{ error }}
-      <BaseButton variant="text" @click="load"
+      <BaseButton variant="text" :disabled="!!retryIn" @click="load"
         >Повторить загрузку файлов</BaseButton
       ></NoticeMessage
     >
@@ -243,7 +253,7 @@ onBeforeUnmount(() => {
               <td>
                 <div class="actions">
                   <BaseButton
-                    :disabled="!!busy"
+                    :disabled="!!busy || !!writeRetry"
                     :loading="busy === file.id"
                     :aria-label="'Скачать ' + file.fileName"
                     @click="download(file)"
@@ -251,7 +261,7 @@ onBeforeUnmount(() => {
                   ><BaseButton
                     :id="'delete-' + file.id"
                     variant="text"
-                    :disabled="!!busy"
+                    :disabled="!!busy || !!writeRetry"
                     :aria-label="'Удалить ' + file.fileName"
                     @click="selectDelete(file)"
                     >Удалить</BaseButton
@@ -307,6 +317,7 @@ onBeforeUnmount(() => {
       confirm-label="Удалить файл"
       :busy="busy === 'delete'"
       :danger="true"
+      :confirm-disabled="!!writeRetry"
       :error="writeError"
       @close="closeDelete"
       @confirm="remove"

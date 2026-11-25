@@ -10,19 +10,23 @@ import QuotaDisplay from '../shared/ui/QuotaDisplay.vue'
 import LoadingState from '../shared/ui/LoadingState.vue'
 import EmptyState from '../shared/ui/EmptyState.vue'
 import NoticeMessage from '../shared/ui/NoticeMessage.vue'
-const { data, error, loading, load } = useDemoResource(async (options) => {
-  const [profile, jobs] = await Promise.all([
-    demoApi.profile(options),
-    demoApi.activeJobs(options),
-  ])
-  return { profile, jobs }
-})
+const { data, error, loading, load, retryIn } = useDemoResource(
+  async (options) => {
+    const [profile, jobs] = await Promise.all([
+      demoApi.profile(options),
+      demoApi.activeJobs(options),
+    ])
+    return { profile, jobs }
+  },
+)
+import { useRetryDelay } from '../shared/api/use-retry-delay.js'
+const { remaining: saveRetry, apply: delaySave } = useRetryDelay()
 const saving = ref(false),
   saveError = ref(''),
   message = ref('')
 const controller = new AbortController()
 async function changeSaving(value) {
-  if (saving.value || !data.value) return
+  if (saving.value || saveRetry.value || !data.value) return
   saving.value = true
   saveError.value = ''
   message.value = ''
@@ -38,6 +42,7 @@ async function changeSaving(value) {
     }
   } catch (failure) {
     if (!controller.signal.aborted) {
+      delaySave(failure)
       saveError.value = failure.message
       if (failure.code === 'SETTINGS_CONFLICT') {
         await load()
@@ -69,7 +74,7 @@ onBeforeUnmount(() => controller.abort())
     <LoadingState v-if="loading" />
     <NoticeMessage v-if="error" tone="danger"
       >{{ error }}
-      <BaseButton variant="text" @click="load"
+      <BaseButton variant="text" :disabled="!!retryIn" @click="load"
         >Повторить загрузку кабинета</BaseButton
       ></NoticeMessage
     >
@@ -81,7 +86,7 @@ onBeforeUnmount(() => controller.abort())
           label="Сохранять новые результаты в профиле"
           :checked="data.profile.saveToProfile"
           :busy="saving"
-          :disabled="loading"
+          :disabled="loading || !!saveRetry"
           hint="Изменение действует только для новых задач. Уже сохранённые файлы останутся."
           @change="changeSaving"
         />
@@ -112,7 +117,9 @@ onBeforeUnmount(() => controller.abort())
             <p class="caption">
               {{ formatDate(job.createdAt, data.profile.timeZone) }}
             </p>
-            <RouterLink to="/" class="button button-secondary"
+            <RouterLink
+              :to="{ path: '/', query: { job: job.id } }"
+              class="button button-secondary"
               >Открыть задачу</RouterLink
             >
           </div>
