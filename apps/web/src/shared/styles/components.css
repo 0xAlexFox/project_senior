@@ -1,0 +1,188 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.form-stack {
+  gap: var(--form-gap);
+}
+.workspace-panel {
+  padding: var(--panel-padding);
+}
+.panel-title {
+  font-size: var(--font-panel);
+  line-height: 1.4;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.actions > * {
+  min-width: 0;
+}
+.button-danger {
+  background: transparent;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.button-danger:hover {
+  background: var(--color-surface-raised);
+}
+.password-field-toggle {
+  align-self: flex-start;
+  padding: 4px 0;
+  min-height: var(--icon-target);
+  font-size: var(--font-caption);
+}
+.base-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+}
+.base-tabs button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--control-height);
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: transparent;
+  overflow-wrap: anywhere;
+  font-size: var(--font-label);
+}
+.base-tabs [aria-selected='true'] {
+  color: var(--color-on-action);
+  background: var(--color-action);
+}
+.switch-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.switch-control > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: var(--control-height);
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  text-align: left;
+  background: transparent;
+  font-size: var(--font-label);
+}
+.switch-track {
+  width: 48px;
+  height: 28px;
+  padding: 4px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-control-border);
+}
+.switch-track > span {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-surface);
+}
+[aria-checked='true'] .switch-track {
+  background: var(--color-action);
+}
+[aria-checked='true'] .switch-track > span {
+  margin-left: auto;
+  background: var(--color-on-action);
+}
+.progress-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--font-label);
+}
+progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  accent-color: var(--color-action);
+}
+.base-dialog {
+  box-sizing: border-box;
+  width: min(412px, calc(100% - 32px));
+  max-height: calc(100svh - 32px);
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  color: var(--color-text);
+  background: var(--color-surface);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+.base-dialog::backdrop {
+  background: color-mix(in srgb, var(--color-canvas) 75%, transparent);
+}
+.base-dialog .actions > * {
+  flex: 1 1 120px;
+}
+.copy-text pre {
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
+  color: var(--color-text-secondary);
+  max-width: 100%;
+  overflow: auto;
+  font: 400 var(--font-code-size)/1.6 var(--font-code);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.copy-text .button {
+  align-self: flex-start;
+}
+.status-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  font-size: var(--font-caption);
+}
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.skeleton-line {
+  display: block;
+  min-height: 48px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
+}
+.quota-display > p {
+  font-size: var(--font-label);
+}
+.quota-meter {
+  display: flex;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+.quota-meter > span:first-child {
+  background: var(--color-action);
+}
+.quota-meter > span:last-child {
+  background: var(--color-control-border);
+}
+.component-preview {
+  margin-block: 56px;
+  max-width: 720px;
+}

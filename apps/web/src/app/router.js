@@ -18,6 +18,15 @@ const pending = [
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
+    ...(import.meta.env.DEV
+      ? [
+          {
+            path: '/preview/components',
+            component: () => import('../dev/ComponentsPreview.vue'),
+            meta: { title: 'Компоненты — тестовый стенд' },
+          },
+        ]
+      : []),
     { path: '/', component: HomePage, meta: { title: 'Конвертер файлов' } },
     { path: '/auth/login', component: LoginPage, meta: { title: 'Войти' } },
     ...pending.map(([path, title]) => ({

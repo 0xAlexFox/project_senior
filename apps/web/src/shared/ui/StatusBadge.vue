@@ -1,0 +1,3 @@
+<template>
+  <span class="status-badge"><slot /></span>
+</template>

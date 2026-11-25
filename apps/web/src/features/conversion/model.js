@@ -1,4 +1,6 @@
 import { computed, shallowRef, ref } from 'vue'
+import { formatBytes } from '../../shared/lib/format.js'
+export { formatBytes } from '../../shared/lib/format.js'
 import { previewFormats } from '../../shared/api/preview-formats.js'
 
 // File objects exist only in this tab's memory: never URL, storage, or network.
@@ -21,11 +23,7 @@ export function fileProblem(file, format) {
     return `Размер файла — ${formatBytes(file.size)} (${new Intl.NumberFormat('ru-RU').format(file.size)} байт). Допустимо до ${format.limitLabel}.`
   return ''
 }
-export function formatBytes(bytes) {
-  return bytes < 1024 * 1024
-    ? `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(bytes / 1024)} KiB`
-    : `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(bytes / (1024 * 1024))} MiB`
-}
+
 const fileError = computed(
   () =>
     selectionError.value ||
