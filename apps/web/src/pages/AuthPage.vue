@@ -155,6 +155,7 @@ async function finish() {
   if (busy.value) return
   busy.value = true
   try {
+    await demoApi.confirmCodes(options)
     await demoApi.signIn(options)
     if (!disposed) {
       acknowledged.value = true

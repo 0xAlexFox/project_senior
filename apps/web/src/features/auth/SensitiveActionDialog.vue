@@ -12,6 +12,7 @@ const props = defineProps({
   confirmLabel: { type: String, default: 'Подтвердить' },
   danger: { type: Boolean, default: false },
   execute: { type: Function, required: true },
+  confirmDisabled: { type: Boolean, default: false },
 })
 const emit = defineEmits(['close', 'complete', 'failure'])
 const password = ref(''),
@@ -31,7 +32,7 @@ function clear() {
 }
 watch(() => props.open, clear)
 async function confirm() {
-  if (busy.value || !props.open) return
+  if (busy.value || !props.open || props.confirmDisabled) return
   fieldError.value = passwordProblem(password.value)
   if (fieldError.value) {
     document.getElementById(props.id + '-password')?.focus()
@@ -77,6 +78,7 @@ onBeforeUnmount(() => {
     :danger="danger"
     :busy="busy"
     :error="error"
+    :confirm-disabled="confirmDisabled"
     @close="$emit('close')"
     @confirm="confirm"
   >
@@ -88,5 +90,6 @@ onBeforeUnmount(() => {
       :error="fieldError"
       :disabled="busy"
     />
+    <slot />
   </BaseDialog>
 </template>

@@ -99,3 +99,22 @@ test('удаление сохранённого результата немед�
   })
   expect((await demoApi.job(job.id)).status).toBe('succeeded')
 })
+
+test('отключение Telegram требует подтверждённый комплект; неудачная замена сохраняет прежнюю связь', async () => {
+  demo.telegram.status = 'connected'
+  await demoApi.reauth()
+  await demoApi.startTelegram()
+  expect(demo.telegram.previousConnected).toBe(true)
+  await expect(demoApi.confirmTelegram()).rejects.toMatchObject({
+    code: 'TELEGRAM_NOT_CONFIRMED',
+  })
+  await demoApi.cancelTelegram()
+  expect(demo.telegram.status).toBe('connected')
+  await demoApi.regenerateCodes()
+  await expect(demoApi.disconnectTelegram()).rejects.toMatchObject({
+    code: 'REAUTH_REQUIRED',
+  })
+  await demoApi.confirmCodes()
+  await demoApi.disconnectTelegram()
+  expect(demo.telegram.status).toBe('disconnected')
+})

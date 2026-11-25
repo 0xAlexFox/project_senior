@@ -40,6 +40,7 @@ export const demo = reactive({
   files: makeDemoFiles(),
   key: { status: 'none', mask: '', createdAt: null, lastUsedAt: null },
   codeCount: 8,
+  codesConfirmed: true,
   codeBatch: 1,
   telegram: {
     status: 'disconnected',
@@ -134,6 +135,7 @@ export function disablePreview() {
     botConfirmed: false,
   }
   demo.codeCount = 8
+  demo.codesConfirmed = true
   demo.message = ''
   persist()
 }
@@ -361,7 +363,7 @@ export const demoApi = {
       demo.version += 1
       return profileResponse()
     }, options),
-  updateProfile: (profile, version) =>
+  updateProfile: (profile, version, options) =>
     respond(() => {
       if (version !== demo.version) throw new DemoError('SETTINGS_CONFLICT')
       demo.profile = {
@@ -371,7 +373,7 @@ export const demoApi = {
       }
       demo.version += 1
       return profileResponse()
-    }),
+    }, options),
   files: (options) =>
     respond(() => ({ items: demo.files, quota: getDemoQuota() }), options),
   searchFiles: (criteria, options) =>
@@ -492,25 +494,48 @@ export const demoApi = {
         demo.viewer = false
         demo.key.status = 'revoked'
         demo.codeCount = 0
+        demo.codesConfirmed = false
         persist()
         return { changed: true }
       },
       { ...options, publicAction: true },
     ),
-  changePassword: () =>
+  changePassword: (options) =>
     respond(() => {
       reauthRequired()
       demo.reauthUntil = null
       return { changed: true }
-    }),
-  regenerateCodes: () =>
+    }, options),
+  regenerateCodes: (options) =>
     respond(() => {
       reauthRequired()
       demo.codeBatch += 1
       demo.codeCount = 8
+      demo.codesConfirmed = false
       return { recoveryCodes: makeRecoveryCodes(demo.codeBatch) }
-    }),
-  startTelegram: () =>
+    }, options),
+  confirmCodes: (options) =>
+    respond(
+      () => {
+        demo.codesConfirmed = true
+        return { confirmed: true }
+      },
+      { ...options, publicAction: true },
+    ),
+  cancelTelegram: (options) =>
+    respond(() => {
+      if (demo.telegram.status === 'pending')
+        demo.telegram = {
+          status: demo.telegram.previousConnected
+            ? 'connected'
+            : 'disconnected',
+          expiresAt: null,
+          botConfirmed: false,
+          browserConfirmed: false,
+        }
+      return demo.telegram
+    }, options),
+  startTelegram: (options) =>
     respond(() => {
       reauthRequired()
       demo.telegram = {
@@ -523,11 +548,16 @@ export const demoApi = {
         browserConfirmed: false,
       }
       return demo.telegram
-    }),
-  confirmTelegram: () =>
+    }, options),
+  confirmTelegram: (options) =>
     respond(() => {
-      if (demo.telegram.expiresAt <= Date.now() || !demo.telegram.botConfirmed)
-        throw new DemoError('RECOVERY_EXPIRED')
+      if (
+        demo.telegram.status !== 'pending' ||
+        demo.telegram.expiresAt <= Date.now()
+      )
+        throw new DemoError('CHALLENGE_EXPIRED')
+      if (!demo.telegram.botConfirmed)
+        throw new DemoError('TELEGRAM_NOT_CONFIRMED')
       demo.telegram = {
         status: 'connected',
         expiresAt: null,
@@ -535,11 +565,12 @@ export const demoApi = {
         browserConfirmed: true,
       }
       return demo.telegram
-    }),
-  disconnectTelegram: () =>
+    }, options),
+  disconnectTelegram: (options) =>
     respond(() => {
       reauthRequired()
-      if (!demo.codeCount) throw new DemoError('REAUTH_REQUIRED')
+      if (!demo.codeCount || !demo.codesConfirmed)
+        throw new DemoError('REAUTH_REQUIRED')
       demo.telegram = {
         status: 'disconnected',
         expiresAt: null,
@@ -547,13 +578,16 @@ export const demoApi = {
         browserConfirmed: false,
       }
       return demo.telegram
-    }),
-  deleteAccount: () =>
+    }, options),
+  deleteAccount: (options) =>
     respond(() => {
       reauthRequired()
+      // Preview data only. No real account or remote files exist.
       disablePreview()
+      demo.message =
+        'Учебный аккаунт удалён. Настоящего аккаунта и файлов на сервере нет.'
       return { deleted: true }
-    }),
+    }, options),
   createJob: (conversion, saveToProfile, idempotencyKey, options) =>
     respond(() => {
       if (demo.job?.idempotencyKey === idempotencyKey) {
