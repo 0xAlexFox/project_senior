@@ -14,11 +14,11 @@
     "packages/*"
   ],
   "scripts": {
-    "check": "npm run check:docs && npm run check:deps && npm run format:check && npm run format:web:check",
+    "check": "npm run check:docs && npm run check:deps && npm run format:check && npm run format:web:check && npm run lint",
     "check:docs": "python3 scripts/verify_docs.py",
     "check:deps": "npm ls --all",
-    "format:check": "prettier --check package.json 'apps/*/package.json' 'packages/*/package.json' .prettierrc.json jsconfig.json compose.yaml .vscode/settings.json",
-    "format": "prettier --write package.json 'apps/*/package.json' 'packages/*/package.json' .prettierrc.json jsconfig.json compose.yaml .vscode/settings.json",
+    "format:check": "prettier --check package.json 'apps/*/package.json' 'packages/*/package.json' eslint.config.js stylelint.config.js .prettierrc.json jsconfig.json compose.yaml .vscode/settings.json",
+    "format": "prettier --write package.json 'apps/*/package.json' 'packages/*/package.json' eslint.config.js stylelint.config.js .prettierrc.json jsconfig.json compose.yaml .vscode/settings.json",
     "audit:dependencies": "npm audit --audit-level=moderate",
     "db:config": "docker compose config --quiet",
     "db:up": "docker compose up -d --wait db",
@@ -28,7 +28,13 @@
     "preview:web": "npm run preview --workspace @converter/web",
     "format:web:check": "prettier --check \"apps/web/**/*.{vue,js,html,css}\" playwright.config.js \"tests/e2e/**/*.js\"",
     "format:web": "prettier --write \"apps/web/**/*.{vue,js,html,css}\" playwright.config.js \"tests/e2e/**/*.js\"",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "setup:python": "python3 -m venv .local/lint-venv && .local/lint-venv/bin/python -m pip install --only-binary=:all: --requirement requirements-dev.txt",
+    "lint": "npm run lint:js && npm run lint:css && npm run lint:python",
+    "lint:js": "eslint . --max-warnings 0",
+    "lint:fix": "npm run lint:js -- --fix && npm run lint:css -- --fix && npm run lint:python -- --fix",
+    "lint:css": "stylelint \"apps/web/src/**/*.css\" --max-warnings 0",
+    "lint:python": ".local/lint-venv/bin/python -m ruff check scripts tools"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -40,6 +46,8 @@
     "globals": "17.14.0",
     "node-pg-migrate": "9.0.0",
     "prettier": "3.10.1",
+    "stylelint": "18.1.0",
+    "stylelint-config-recommended": "19.1.0",
     "vue-eslint-parser": "10.4.2"
   },
   "overrides": {

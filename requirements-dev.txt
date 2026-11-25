@@ -1,0 +1,2 @@
+# Development tooling only; application scripts remain standard-library-only.
+ruff==0.17.6

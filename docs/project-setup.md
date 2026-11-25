@@ -1,6 +1,6 @@
 # Окружение и запуск проекта
 
-Актуализация: 24 ноября 2026 г. Основа без исходников подготовлена в IT-0014 по [архитектуре](application-architecture.md) и [технологиям](technology-decisions.md). В IT-0017 добавлены начальный frontend, его запуск, сборка и браузерные проверки. Backend, миграции и runner ещё не реализованы; инструменты Python и контракт OpenAPI сохранены.
+Актуализация: 25 ноября 2026 г. Основа без исходников подготовлена в IT-0014 по [архитектуре](application-architecture.md) и [технологиям](technology-decisions.md). В IT-0017 добавлены начальный frontend, его запуск, сборка и браузерные проверки. Backend, миграции и runner ещё не реализованы; инструменты Python и контракт OpenAPI сохранены.
 
 ## Структура
 
@@ -19,6 +19,8 @@
 | [.editorconfig](../.editorconfig), [.gitattributes](../.gitattributes) | UTF-8, LF и правила текстовых/бинарных файлов |
 | [.vscode/settings.json](../.vscode/settings.json) | Python-терминал VS Code использует локальный .env; в Git хранится только переключатель, без значений переменных |
 | [.prettierrc.json](../.prettierrc.json), [.prettierignore](../.prettierignore) | Формат декларативных настроек и исключение локальных данных |
+| [eslint.config.js](../eslint.config.js), [stylelint.config.js](../stylelint.config.js) | Правила JavaScript/Vue, границы браузерных импортов и проверка CSS |
+| [ruff.toml](../ruff.toml), [requirements-dev.txt](../requirements-dev.txt) | Минимальные Python-проверки и точная версия Ruff в отдельном dev-окружении |
 | [jsconfig.json](../jsconfig.json) | Настройки редактора для будущих JavaScript ES modules; это не сборщик и не обещание пройденного typecheck |
 | [compose.yaml](../compose.yaml) | Только локальная PostgreSQL для разработки, без приложения/runner |
 | [.dockerignore](../.dockerignore), [.gitignore](../.gitignore) | Исключение секретов, зависимостей, сборок и локальных журналов |
@@ -40,6 +42,8 @@
 | корень | `globals` | 17.14.0 | dev |
 | корень | `node-pg-migrate` | 9.0.0 | dev |
 | корень | `prettier` | 3.10.1 | dev |
+| корень | `stylelint` | 18.1.0 | dev |
+| корень | `stylelint-config-recommended` | 19.1.0 | dev |
 | корень | `vue-eslint-parser` | 10.4.2 | dev |
 | apps/web | `vue` | 3.5.46 | runtime |
 | apps/web | `vue-router` | 4.6.5 | runtime |
@@ -73,15 +77,35 @@ Override glob меняет major транзитивного пакета: про
 
 ## Доступные команды
 
-`npm ci` устанавливает зафиксированный граф; `.npmrc` запрещает lifecycle scripts. `npm run check` выполняет проверку документации, `npm ls --all` и формат декларативных настроек. `npm run format:check` проверяет формат, `npm run format` исправляет только перечисленные настройки; `npm run audit:dependencies` проверяет полный граф, включая dev-зависимости.
+`npm ci` устанавливает зафиксированный граф; `.npmrc` запрещает lifecycle scripts. `npm run check` выполняет проверку документации, `npm ls --all`, формат настроек/исходников и `npm run lint`. `npm run format:check` проверяет формат, `npm run format` исправляет только перечисленные настройки; `npm run audit:dependencies` проверяет полный граф, включая dev-зависимости.
 
 `npm run db:config` проверяет Compose через установленный Docker; `npm run db:up` запускает и ожидает готовности локальной БД; `npm run db:stop` останавливает её без удаления volume. Эти команды требуют Docker Engine с Compose v2 и корректного локального `.env`. Ни одна из них не выполняется как часть npm install/check. Сервисы автоматически не запускаются, удаления данных в scripts нет.
 
 В IT-0017 добавлены `npm run dev:web`, `npm run build:web`, `npm run preview:web`, `npm run format:web:check`, `npm run format:web` и `npm run test:e2e`. Vite запускает только web на 127.0.0.1:5173, preview сборки — на 127.0.0.1:4173. Корневой `.env` не читается web-конфигурацией (`envDir: false`). Браузерные тесты запускаются последовательно с одним worker в установленном Google Chrome (`channel: chrome`); приложение открывается по локальному URL, при необходимости тестовый runner запускает Vite сам. Отдельный браузер Playwright не требуется для текущей конфигурации.
 
-В `npm run check` включена проверка формата исходников web, браузерных тестов и Playwright-конфигурации. ESLint и Vitest пока не настроены; существование их пакетов не означает успешного lint/unit-набора. Команд запуска backend/worker, миграций и release ещё нет.
+В `npm run check` включена проверка формата исходников web, браузерных тестов и Playwright-конфигурации. В IT-0021 настроены ESLint, Stylelint и Ruff; Vitest пока не настроен, существование его пакетов не означает успешного unit-набора. Команд запуска backend/worker, миграций и release ещё нет.
 
 Для проверок Codex действует [порядок завершения рабочего сеанса](git-flow.md#завершение-рабочего-сеанса): временные процессы не оставляются после работы без явного поручения владельца. Ручные пользовательские сеансы запуска этим правилом не останавливаются.
+
+## Линтеры — IT-0021
+
+Подготовка на macOS/Linux: после `npm ci --ignore-scripts` выполнить `npm run setup:python`. Нужен Python 3.10+ с модулем venv. Команда создаёт `.local/lint-venv` и устанавливает только wheel Ruff 0.17.6 из `requirements-dev.txt`, без глобальной установки. Каталог нужен для последующих проверок и не входит в Git. После обновления версии Ruff повторить setup; `required-version` в ruff.toml должен совпадать. При недоступном окружении Python общая проверка завершается ошибкой, а не пропускает Ruff.
+
+| Команда | Охват |
+| --- | --- |
+| `npm run lint` | Все три линтера последовательно; входит в `npm run check` |
+| `npm run lint:js` | ESLint: JS/MJS/CJS и Vue, включая конфигурации и тесты |
+| `npm run lint:css` | Stylelint: отдельные CSS-файлы в `apps/web/src` |
+| `npm run lint:python` | Ruff: Python-файлы `scripts` и `tools` |
+| `npm run lint:fix` | Явные автоисправления ESLint, Stylelint и Ruff; результат нужно просмотреть и перепроверить |
+
+ESLint использует JS recommended и Vue essential: ошибки шаблонов/реактивности, неиспользуемые имена, строгие сравнения, const вместо var, запрет eval/Function и v-html. Имена с `_` разрешены только как намеренно неиспользуемые. Console запрещён в исходниках приложения/пакетов; тестовые сценарии и конфигурации имеют отдельные окружения. Playwright-файлы допускают Node и browser globals из-за page.evaluate; это не проверка правильности разделения контекстов выполнения.
+
+Во frontend запрещены статические импорты серверных workspaces по имени и пути, а также Node built-ins с префиксом node: и без него. Contracts разрешены. Динамические загрузки, транзитивные зависимости и безопасность содержимого пакетов требуют отдельного ревью: no-restricted-imports не является изоляцией runtime или проверкой секретов.
+
+Stylelint использует error-oriented `stylelint-config-recommended`, не вводит ограничения специфичности, размеров или !important. При появлении style-блоков Vue добавить соответствующий парсер и расширить охват. Ruff использует только E4/E7/E9/F, без автоформатирования или unsafe-fixes. Prettier сохраняет ответственность за форматирование; eslint-config-prettier отключает конфликтующие правила. ESLint/Stylelint запускаются с нулевым допустимым числом предупреждений. Локальные данные, зависимости, сборки и отчёты исключены из обхода.
+
+Правила не заменяют тесты Unicode/паролей, серверные проверки файлов, прав доступа и отдельное security review. Зависимости Stylelint сверены с официальным npm registry и требованиями Node; Ruff закреплён отдельно как dev-инструмент. Документация: [Vue ESLint](https://eslint.vuejs.org/user-guide/), [Stylelint](https://stylelint.io/user-guide/configure/), [Ruff](https://docs.astral.sh/ruff/configuration/).
 
 ## Системные зависимости и границы проверки
 
