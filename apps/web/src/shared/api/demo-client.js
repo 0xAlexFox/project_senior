@@ -138,10 +138,16 @@ export function disablePreview() {
   persist()
 }
 
-async function respond(action, { signal, publicAction = false } = {}) {
+async function respond(
+  action,
+  { signal, publicAction = false, operation = '' } = {},
+) {
   if (!demo.enabled) throw new DemoError('PREVIEW_DISABLED')
-  const failure = demo.nextError
-  demo.nextError = ''
+  const failure =
+    demo.nextError === 'KEY_RESPONSE_LOST' && operation !== 'key-issue'
+      ? ''
+      : demo.nextError
+  if (failure) demo.nextError = ''
   if (signal?.aborted) throw new DOMException('Отменено', 'AbortError')
   await new Promise((resolve, reject) => {
     const cancel = () => {
@@ -396,30 +402,33 @@ export const demoApi = {
         fileName: `учебный-${file.fileName}`,
       }
     }, options),
-  reauth: () =>
+  reauth: (options) =>
     respond(() => {
       demo.reauthUntil = Date.now() + 5 * 60_000
       return { valid: true }
-    }),
-  key: () => respond(() => demo.key),
-  createKey: () =>
-    respond(() => {
-      reauthRequired()
-      const suffix = String(sequence++).padStart(4, '0')
-      demo.key = {
-        status: 'active',
-        mask: `demo_key_••••_${suffix}`,
-        createdAt: iso(),
-        lastUsedAt: null,
-      }
-      return { key: demo.key, secret: `DEMO-NOT-A-VALID-API-KEY-${suffix}` }
-    }),
-  revokeKey: () =>
+    }, options),
+  key: (options) => respond(() => demo.key, options),
+  createKey: (options) =>
+    respond(
+      () => {
+        reauthRequired()
+        const suffix = String(sequence++).padStart(4, '0')
+        demo.key = {
+          status: 'active',
+          mask: `demo_key_••••_${suffix}`,
+          createdAt: iso(),
+          lastUsedAt: null,
+        }
+        return { key: demo.key, secret: `DEMO-NOT-A-VALID-API-KEY-${suffix}` }
+      },
+      { ...options, operation: 'key-issue' },
+    ),
+  revokeKey: (options) =>
     respond(() => {
       reauthRequired()
       demo.key.status = 'revoked'
       return demo.key
-    }),
+    }, options),
   signIn: (options) =>
     respond(
       () => {

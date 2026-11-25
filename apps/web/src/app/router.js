@@ -4,7 +4,6 @@ import LoginPage from '../pages/LoginPage.vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
 
 const pending = [
-  ['/account/api-key', 'API-ключ'],
   ['/account/settings', 'Настройки'],
   ['/api-docs', 'Документация API'],
   ['/privacy', 'Конфиденциальность'],
@@ -33,6 +32,11 @@ export const router = createRouter({
       path: '/account/files',
       component: () => import('../pages/FilesPage.vue'),
       meta: { title: 'Мои файлы' },
+    },
+    {
+      path: '/account/api-key',
+      component: () => import('../pages/ApiKeyPage.vue'),
+      meta: { title: 'API-ключ' },
     },
     ...[
       ['register', 'Создать аккаунт'],
