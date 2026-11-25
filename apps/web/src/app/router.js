@@ -1,13 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../pages/HomePage.vue'
 import LoginPage from '../pages/LoginPage.vue'
-import PlaceholderPage from '../pages/PlaceholderPage.vue'
-
-const pending = [
-  ['/api-docs', 'Документация API'],
-  ['/privacy', 'Конфиденциальность'],
-]
-
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -52,14 +45,19 @@ export const router = createRouter({
       props: { mode },
       meta: { title },
     })),
-    ...pending.map(([path, title]) => ({
-      path,
-      component: PlaceholderPage,
-      meta: { title, pending: true },
-    })),
+    {
+      path: '/api-docs',
+      component: () => import('../pages/ApiDocsPage.vue'),
+      meta: { title: 'Документация API' },
+    },
+    {
+      path: '/privacy',
+      component: () => import('../pages/PrivacyPage.vue'),
+      meta: { title: 'Конфиденциальность' },
+    },
     {
       path: '/:pathMatch(.*)*',
-      component: PlaceholderPage,
+      component: () => import('../pages/NotFoundPage.vue'),
       meta: { title: 'Страница не найдена' },
     },
   ],

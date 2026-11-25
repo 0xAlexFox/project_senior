@@ -1,0 +1,9 @@
+// Inert examples from docs/api.md, never executed in the browser.
+export const curlCreate =
+  "# Создайте один UUID v4. Сохраните его для повтора этого же запроса.\nexport CONVERTER_IDEMPOTENCY_KEY=\"$(uuidgen)\"\ncurl --fail-with-body -X POST 'https://converter.example/api/v1/conversions' \\\n  -H \"Authorization: Bearer $CONVERTER_API_KEY\" \\\n  -H \"Idempotency-Key: $CONVERTER_IDEMPOTENCY_KEY\" \\\n  -F 'conversion=docx_to_pdf' \\\n  -F 'save_to_profile=false' \\\n  -F 'file=@./document.docx'"
+export const curlStatus =
+  'curl --fail-with-body \\\n  -H "Authorization: Bearer $CONVERTER_API_KEY" \\\n  \'https://converter.example/api/v1/conversions/01949d50-23a0-4000-8000-000000000001\''
+export const curlDownload =
+  '# Только после status=succeeded и result.available=true.\ncurl --fail-with-body \\\n  -H "Authorization: Bearer $CONVERTER_API_KEY" \\\n  \'https://converter.example/api/v1/conversions/01949d50-23a0-4000-8000-000000000001/file\' \\\n  --output result.pdf'
+export const nodeCreate =
+  "import { readFile } from 'node:fs/promises';\nimport { randomUUID } from 'node:crypto';\n\nconst form = new FormData();\nform.set('conversion', 'jpg_to_png');\nform.set('save_to_profile', 'false');\n// Для небольшого примера до 10 MiB; сервер должен читать загрузки потоково.\nform.set('file', new Blob([await readFile('./photo.jpg')], { type: 'image/jpeg' }), 'photo.jpg');\nconst idempotencyKey = randomUUID(); // Сохранить для сетевого повтора этого же запроса.\nconst response = await fetch('https://converter.example/api/v1/conversions', {\n  method: 'POST',\n  headers: { Authorization: `Bearer ${process.env.CONVERTER_API_KEY}`, 'Idempotency-Key': idempotencyKey },\n  body: form,\n  signal: AbortSignal.timeout(130_000),\n});\nconst body = await response.json();\nif (!response.ok) throw new Error(body.error?.code ?? `HTTP_${response.status}`);\nconsole.log(body.id, body.status); // Не выводить секрет и содержимое файла."
