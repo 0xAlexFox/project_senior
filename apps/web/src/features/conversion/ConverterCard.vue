@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useConversionDraft, formatBytes } from './model.js'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import AppIcon from '../../shared/ui/AppIcon.vue'
@@ -14,6 +14,7 @@ const {
   removeFile,
   changeDirection,
 } = useConversionDraft()
+const router = useRouter()
 const input = ref(null)
 const dragging = ref(false)
 const images = computed(() => direction.value.category === 'images')
@@ -25,10 +26,21 @@ function drop(event) {
   dragging.value = false
   selectFiles(Array.from(event.dataTransfer.files))
 }
+function submit() {
+  // Keep this guard even when the disabled button is bypassed by requestSubmit().
+  // The future upload should use the selected File from the in-memory draft.
+  if (!canContinue.value) return
+  return router.push('/auth/login')
+}
 </script>
 
 <template>
-  <section class="converter-card panel" aria-label="Конвертер файлов">
+  <form
+    class="converter-card panel"
+    aria-label="Конвертер файлов"
+    novalidate
+    @submit.prevent="submit"
+  >
     <div class="format-tabs" role="group" aria-label="Тип конвертации">
       <button
         type="button"
@@ -117,17 +129,10 @@ function drop(event) {
     <p id="continue-help" class="caption secondary">
       Для запуска войдите. Выбранный файл останется в этой вкладке.
     </p>
-    <RouterLink
-      v-if="canContinue"
-      to="/auth/login"
-      class="button button-primary full-width"
-      aria-describedby="continue-help"
-      >Войти и продолжить</RouterLink
-    >
     <BaseButton
-      v-else
+      type="submit"
       class="full-width"
-      disabled
+      :disabled="!canContinue"
       aria-describedby="continue-help"
       >Войти и продолжить</BaseButton
     >
@@ -135,5 +140,5 @@ function drop(event) {
       Без сохранения результат доступен 1 час после готовности. Скачивание —
       только вам.
     </p>
-  </section>
+  </form>
 </template>

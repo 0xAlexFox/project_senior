@@ -37,7 +37,7 @@ test('выбор файла сохраняется между страницам
   })
   await page.goto('/')
   await fileInput(page).setInputFiles(jpeg('мой-файл.jpg'))
-  await page.getByRole('link', { name: 'Войти и продолжить' }).click()
+  await page.getByRole('button', { name: 'Войти и продолжить' }).click()
   await expect(
     page.getByText('Выбранный файл «мой-файл.jpg»', { exact: false }),
   ).toBeVisible()
@@ -67,7 +67,7 @@ test('проверки файла: несколько, пустой, невер�
   await expect(page.getByRole('alert')).toContainText('Замените файл')
   await fileInput(page).setInputFiles(jpeg('boundary.jpg', 10 * 1024 * 1024))
   await expect(
-    page.getByRole('link', { name: 'Войти и продолжить' }),
+    page.getByRole('button', { name: 'Войти и продолжить' }),
   ).toBeVisible()
   await fileInput(page).setInputFiles(jpeg('large.jpg', 10 * 1024 * 1024 + 1))
   await expect(page.getByRole('alert')).toContainText('Допустимо до 10 MiB')
