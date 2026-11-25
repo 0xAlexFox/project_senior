@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useConversionDraft, formatBytes } from './model.js'
+import ConversionJobCard from './ConversionJobCard.vue'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import AppIcon from '../../shared/ui/AppIcon.vue'
 import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
@@ -21,6 +22,8 @@ const {
   pending,
   requestError,
   startConversion,
+  phase,
+  restoreJob,
 } = useConversionDraft()
 const router = useRouter()
 const input = ref(null)
@@ -57,7 +60,10 @@ async function loadConfig() {
     if (!controller.signal.aborted) configError.value = error.message
   }
 }
-onMounted(loadConfig)
+onMounted(() => {
+  loadConfig()
+  if (demo.enabled && demo.viewer && demo.job) restoreJob()
+})
 watch(() => demo.enabled, loadConfig)
 onBeforeUnmount(() => configController?.abort())
 function choose(event) {
@@ -76,7 +82,9 @@ function submit() {
 </script>
 
 <template>
+  <ConversionJobCard v-if="job || pending || phase !== 'idle'" />
   <form
+    v-else
     class="converter-card panel"
     aria-label="Конвертер файлов"
     novalidate

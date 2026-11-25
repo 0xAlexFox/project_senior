@@ -2,7 +2,11 @@ import { computed, shallowRef, ref } from 'vue'
 import { formatBytes } from '../../shared/lib/format.js'
 export { formatBytes } from '../../shared/lib/format.js'
 import { previewFormats } from '../../shared/api/preview-formats.js'
-import { demoApi } from '../../shared/api/demo-client.js'
+import {
+  demo,
+  demoApi,
+  rememberPreviewJob,
+} from '../../shared/api/demo-client.js'
 
 // File objects exist only in this tab's memory: never URL, storage, or network.
 const selectedFile = shallowRef(null)
@@ -12,7 +16,10 @@ const formats = ref(previewFormats)
 const job = shallowRef(null)
 const pending = ref(false)
 const requestError = shallowRef(null)
-let requestKey = null
+const phase = ref('idle')
+let attempt = null
+let controller
+const retryAt = ref(0)
 let epoch = 0
 const direction = computed(() =>
   formats.value.find((format) => format.id === directionId.value),
@@ -54,14 +61,14 @@ function selectFiles(files) {
   }
   selectedFile.value = files[0]
   selectionError.value = ''
-  requestKey = null
+  attempt = null
   requestError.value = null
 }
 function removeFile() {
   if (pending.value || job.value) return
   selectedFile.value = null
   selectionError.value = ''
-  requestKey = null
+  attempt = null
   requestError.value = null
 }
 function changeDirection(id) {
@@ -72,39 +79,106 @@ function changeDirection(id) {
   }
   directionId.value = id
   selectionError.value = ''
-  requestKey = null
+  attempt = null
   requestError.value = null
 }
 export function clearConversionDraft() {
   epoch += 1
+  controller?.abort()
+  phase.value = 'idle'
+  rememberPreviewJob(null)
   selectedFile.value = null
   selectionError.value = ''
   requestError.value = null
-  requestKey = null
+  attempt = null
   pending.value = false
   job.value = null
 }
 async function startConversion(saveToProfile) {
-  if (!canContinue.value || pending.value || job.value) return
+  if (
+    !canContinue.value ||
+    pending.value ||
+    job.value ||
+    Date.now() < retryAt.value
+  )
+    return
   const current = epoch
   pending.value = true
+  phase.value = 'uploading'
   requestError.value = null
-  requestKey ||= crypto.randomUUID()
+  attempt ||= {
+    conversion: direction.value.id,
+    save: saveToProfile === true,
+    key: crypto.randomUUID(),
+  }
+  controller = new AbortController()
   try {
     const accepted = await demoApi.createJob(
-      direction.value.id,
-      saveToProfile,
-      requestKey,
+      attempt.conversion,
+      attempt.save,
+      attempt.key,
+      { signal: controller.signal },
     )
-    if (current === epoch) job.value = accepted
+    if (current === epoch) acceptJob(accepted)
   } catch (error) {
-    if (current === epoch) requestError.value = error
+    if (current === epoch) {
+      phase.value = error.name === 'AbortError' ? 'upload-cancelled' : 'unknown'
+      if (error.name !== 'AbortError') requestError.value = error
+      retryAt.value = Date.now() + (error.retryAfter || 0) * 1000
+    }
   } finally {
     if (current === epoch) pending.value = false
   }
 }
+function acceptJob(value) {
+  job.value = value
+  phase.value = 'accepted'
+  requestError.value = null
+  rememberPreviewJob(value.id)
+}
+function cancelUpload() {
+  controller?.abort()
+}
+async function restoreJob() {
+  if (!demo.enabled || !demo.viewer || job.value || pending.value) return
+  const current = epoch
+  pending.value = true
+  phase.value = 'restoring'
+  try {
+    const value = demo.job
+      ? await demoApi.job(demo.job.id)
+      : (await demoApi.activeJobs())[0]
+    if (current === epoch) {
+      if (value) acceptJob(value)
+      else {
+        phase.value = 'idle'
+        requestError.value = null
+      }
+    }
+  } catch (error) {
+    if (current === epoch) {
+      requestError.value = error
+      phase.value = 'unknown'
+    }
+  } finally {
+    if (current === epoch) pending.value = false
+  }
+}
+function temporaryConversion() {
+  if (pending.value || job.value) return
+  attempt = null
+  retryAt.value = 0
+  return startConversion(false)
+}
 export function useConversionDraft() {
   return {
+    retryAt,
+    phase,
+    acceptJob,
+    cancelUpload,
+    restoreJob,
+    temporaryConversion,
+    resetConversion: clearConversionDraft,
     selectedFile,
     direction,
     fileError,

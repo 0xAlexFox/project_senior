@@ -91,6 +91,13 @@ function changeJob() {
           :options="failureOptions"
         />
         <label
+          >Задержка учебного ответа
+          <select v-model.number="demo.latencyMs" class="control">
+            <option :value="150">Обычная</option>
+            <option :value="2000">2 секунды</option>
+          </select>
+        </label>
+        <label
           ><input v-model="demo.online" type="checkbox" /> Связь с учебным
           сервисом</label
         >

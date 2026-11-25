@@ -33,6 +33,10 @@ export function makeRecoveryCodes(batch = 1) {
 }
 
 export const demoErrors = {
+  RESPONSE_LOST: [
+    'Ответ на создание потерян. Принятие задачи неизвестно.',
+    true,
+  ],
   NETWORK_ERROR: ['Нет связи. Не удаётся получить ответ.', true],
   SESSION_EXPIRED: ['Сессия истекла. Войдите снова.', false],
   SETTINGS_CONFLICT: [

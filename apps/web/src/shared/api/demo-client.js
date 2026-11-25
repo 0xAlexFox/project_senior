@@ -67,6 +67,12 @@ export class DemoError extends Error {
   }
 }
 
+let knownJobId = null
+export function rememberPreviewJob(id) {
+  knownJobId = id
+  persist()
+}
+
 function persist() {
   try {
     if (typeof window === 'undefined') return
@@ -75,16 +81,17 @@ function persist() {
       return
     }
     // Only preview flags and synthetic job data. Never profile, filenames or secrets.
-    const job = demo.job && {
-      id: demo.job.id,
-      conversion: demo.job.conversion,
-      status: demo.job.status,
-      saveToProfile: demo.job.saveToProfile,
-      createdAt: demo.job.createdAt,
-      finishedAt: demo.job.finishedAt,
-      expiresAt: demo.job.result?.expiresAt,
-      deleted: demo.job.deleted === true,
-    }
+    const job = demo.job &&
+      knownJobId === demo.job.id && {
+        id: demo.job.id,
+        conversion: demo.job.conversion,
+        status: demo.job.status,
+        saveToProfile: demo.job.saveToProfile,
+        createdAt: demo.job.createdAt,
+        finishedAt: demo.job.finishedAt,
+        expiresAt: demo.job.result?.expiresAt,
+        deleted: demo.job.deleted === true,
+      }
     window.sessionStorage.setItem(
       storageKey,
       JSON.stringify({ enabled: true, viewer: demo.viewer, job }),
@@ -149,7 +156,7 @@ async function respond(action, { signal, publicAction = false } = {}) {
   if (signal?.aborted) throw new DOMException('Отменено', 'AbortError')
   if (!demo.enabled) throw new DemoError('PREVIEW_DISABLED')
   if (!demo.online) throw new DemoError('NETWORK_ERROR')
-  if (failure && failure !== 'KEY_RESPONSE_LOST') {
+  if (failure && !['KEY_RESPONSE_LOST', 'RESPONSE_LOST'].includes(failure)) {
     if (failure === 'SESSION_EXPIRED') {
       demo.viewer = false
       demo.reauthUntil = null
@@ -163,7 +170,8 @@ async function respond(action, { signal, publicAction = false } = {}) {
   }
   if (!publicAction && !demo.viewer) throw new DemoError('SESSION_EXPIRED')
   const result = action()
-  if (failure === 'KEY_RESPONSE_LOST') throw new DemoError(failure)
+  if (['KEY_RESPONSE_LOST', 'RESPONSE_LOST'].includes(failure))
+    throw new DemoError(failure)
   return clone(result)
 }
 
@@ -309,6 +317,7 @@ if (
   ['queued', 'running', ...terminal].includes(initial.job.status)
 ) {
   const saved = initial.job
+  knownJobId = saved.id
   demo.job = makeJob(saved.conversion, saved.saveToProfile === true, saved.id)
   if (
     typeof saved.createdAt === 'string' &&
@@ -512,7 +521,7 @@ export const demoApi = {
       disablePreview()
       return { deleted: true }
     }),
-  createJob: (conversion, saveToProfile, idempotencyKey) =>
+  createJob: (conversion, saveToProfile, idempotencyKey, options) =>
     respond(() => {
       if (demo.job?.idempotencyKey === idempotencyKey) {
         if (
@@ -539,12 +548,18 @@ export const demoApi = {
       }
       persist()
       return jobResponse()
-    }),
-  job: (id) =>
+    }, options),
+  activeJobs: (options) =>
+    respond(
+      () =>
+        demo.job && !terminal.includes(demo.job.status) ? [jobResponse()] : [],
+      options,
+    ),
+  job: (id, options) =>
     respond(() => {
       if (id !== demo.job?.id) throw new DemoError('NOT_FOUND')
       return jobResponse()
-    }),
+    }, options),
   cancelJob: (id) =>
     respond(() => {
       if (id !== demo.job?.id) throw new DemoError('NOT_FOUND')

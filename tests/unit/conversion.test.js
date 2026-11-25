@@ -59,3 +59,26 @@ test('непустой маленький файл не выглядит как 
   expect(formatBytes(1024)).toBe('1 KiB')
   expect(formatBytes(1024 ** 2)).toBe('1 MiB')
 })
+
+test('неизвестный ответ повторяет неизменяемый снимок с тем же ключом', async () => {
+  const { demo, enablePreview, disablePreview } =
+    await import('../../apps/web/src/shared/api/demo-client.js')
+  disablePreview()
+  enablePreview()
+  demo.latencyMs = 0
+  clearConversionDraft()
+  const draft = useConversionDraft()
+  draft.changeDirection('jpg_to_png')
+  draft.selectFiles([{ name: 'sample.jpg', type: 'image/jpeg', size: 1 }])
+  demo.nextError = 'RESPONSE_LOST'
+  await draft.startConversion(false)
+  const id = demo.job.id
+  expect(draft.job.value).toBe(null)
+  expect(draft.phase.value).toBe('unknown')
+  demo.saveToProfile = true
+  await draft.startConversion(true)
+  expect(draft.job.value.id).toBe(id)
+  expect(draft.job.value.saveToProfile).toBe(false)
+  clearConversionDraft()
+  disablePreview()
+})
