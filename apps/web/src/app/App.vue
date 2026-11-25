@@ -4,5 +4,5 @@ import AppLayout from './layouts/AppLayout.vue'
 </script>
 
 <template>
-  <AppLayout><RouterView /></AppLayout>
+  <AppLayout><RouterView :key="$route.path" /></AppLayout>
 </template>

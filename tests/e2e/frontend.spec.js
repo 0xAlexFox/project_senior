@@ -136,7 +136,7 @@ test('заглушки маршрутов и неизвестный адрес',
     page.getByRole('heading', { name: 'Создать аккаунт' }),
   ).toBeVisible()
   await expect(
-    page.getByText('Этот раздел ещё не реализован.', { exact: false }),
+    page.getByLabel('Подтверждение пароля', { exact: true }),
   ).toBeVisible()
   await page.goto('/unknown')
   await expect(

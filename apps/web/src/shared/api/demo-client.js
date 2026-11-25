@@ -407,25 +407,26 @@ export const demoApi = {
       demo.key.status = 'revoked'
       return demo.key
     }),
-  signIn: () =>
+  signIn: (options) =>
     respond(
       () => {
         demo.viewer = true
         persist()
         return { demo: true }
       },
-      { publicAction: true },
+      { ...options, publicAction: true },
     ),
   signOut: () => {
     demo.viewer = false
     demo.reauthUntil = null
     persist()
   },
-  register: () =>
+  register: (options) =>
     respond(() => ({ recoveryCodes: makeRecoveryCodes(), demo: true }), {
+      ...options,
       publicAction: true,
     }),
-  requestRecovery: () =>
+  requestRecovery: (options) =>
     respond(
       () => {
         demo.recoveryUntil = Date.now() + 10 * 60_000
@@ -436,9 +437,9 @@ export const demoApi = {
           retryAfter: 2,
         }
       },
-      { publicAction: true },
+      { ...options, publicAction: true },
     ),
-  verifyRecovery: () =>
+  verifyRecovery: (options) =>
     respond(
       () => {
         if (!demo.recoveryUntil || demo.recoveryUntil <= Date.now())
@@ -446,9 +447,19 @@ export const demoApi = {
         demo.resetUntil = Date.now() + 10 * 60_000
         return { resetExpiresAt: new Date(demo.resetUntil).toISOString() }
       },
-      { publicAction: true },
+      { ...options, publicAction: true },
     ),
-  resetPassword: () =>
+  verifyBackup: (options) =>
+    respond(
+      () => {
+        if (!demo.codeCount) throw new DemoError('CODE_USED')
+        demo.codeCount--
+        demo.resetUntil = Date.now() + 10 * 60_000
+        return { resetExpiresAt: new Date(demo.resetUntil).toISOString() }
+      },
+      { ...options, publicAction: true },
+    ),
+  resetPassword: (options) =>
     respond(
       () => {
         if (!demo.resetUntil || demo.resetUntil <= Date.now())
@@ -462,7 +473,7 @@ export const demoApi = {
         persist()
         return { changed: true }
       },
-      { publicAction: true },
+      { ...options, publicAction: true },
     ),
   changePassword: () =>
     respond(() => {

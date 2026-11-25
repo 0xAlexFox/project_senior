@@ -1,9 +1,21 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import FormField from '../../shared/ui/FormField.vue'
 import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
+import { demo, demoApi } from '../../shared/api/demo-client.js'
+import { onBeforeUnmount } from 'vue'
+const router = useRouter()
+const busy = ref(false)
+let controller
+let disposed = false
+onBeforeUnmount(() => {
+  controller?.abort()
+  disposed = true
+  password.value = ''
+  showPassword.value = false
+})
 const login = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -50,14 +62,35 @@ function togglePassword() {
   showPassword.value = !showPassword.value
   touched.value = { ...edited.value }
 }
-function submit() {
+async function submit() {
+  if (busy.value) return
   submitted.value = true
   message.value = ''
   if (loginError.value || passwordError.value) {
     document.getElementById(loginError.value ? 'login' : 'password')?.focus()
     return
   }
-  // Deliberately no fetch, auth cookie, persistence, or simulated login.
+  if (demo.enabled) {
+    busy.value = true
+    try {
+      controller = new AbortController()
+      await demoApi.signIn({ signal: controller.signal })
+      if (!disposed) await router.push('/account')
+    } catch (error) {
+      if (!disposed) message.value = error.message
+    } finally {
+      if (!disposed) {
+        busy.value = false
+        password.value = ''
+        showPassword.value = false
+        submitted.value = false
+        edited.value = { login: false, password: false }
+        touched.value = { login: false, password: false }
+      }
+    }
+    return
+  }
+  // No real transport or persistence.
   message.value = 'Вход пока не подключён. Логин и пароль никуда не отправлены.'
   password.value = ''
   showPassword.value = false
@@ -119,7 +152,13 @@ function submit() {
       {{ showPassword ? 'Скрыть пароль' : 'Показать пароль' }}
     </button>
     <NoticeMessage v-if="message">{{ message }}</NoticeMessage>
-    <BaseButton class="full-width" type="submit">Войти</BaseButton>
+    <BaseButton
+      class="full-width"
+      type="submit"
+      :disabled="busy"
+      :loading="busy"
+      >Войти</BaseButton
+    >
     <RouterLink to="/auth/recover" class="secondary auth-recovery"
       >Забыли пароль? <span aria-hidden="true">→</span></RouterLink
     >

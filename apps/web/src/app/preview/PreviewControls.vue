@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import {
   demo,
+  demoApi,
   disablePreview,
   enablePreview,
   setDemoJobStatus,
@@ -41,6 +42,10 @@ async function enter() {
   enablePreview()
   await router.push('/account')
 }
+function enableForms() {
+  enablePreview()
+  demoApi.signOut()
+}
 async function reset() {
   disablePreview()
   message.value = ''
@@ -62,6 +67,9 @@ function changeJob() {
       пока не подключены.
     </p>
     <div class="actions">
+      <BaseButton v-if="!demo.enabled" variant="text" @click="enableForms"
+        >Включить учебные ответы для форм</BaseButton
+      >
       <BaseButton
         v-if="!demo.enabled || !demo.viewer"
         variant="secondary"

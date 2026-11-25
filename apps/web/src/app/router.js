@@ -4,9 +4,6 @@ import LoginPage from '../pages/LoginPage.vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
 
 const pending = [
-  ['/auth/register', 'Создать аккаунт'],
-  ['/auth/recover', 'Восстановить доступ'],
-  ['/auth/reset', 'Новый пароль'],
   ['/account', 'Личный кабинет'],
   ['/account/files', 'Мои файлы'],
   ['/account/api-key', 'API-ключ'],
@@ -29,6 +26,16 @@ export const router = createRouter({
       : []),
     { path: '/', component: HomePage, meta: { title: 'Конвертер файлов' } },
     { path: '/auth/login', component: LoginPage, meta: { title: 'Войти' } },
+    ...[
+      ['register', 'Создать аккаунт'],
+      ['recover', 'Восстановить доступ'],
+      ['reset', 'Новый пароль'],
+    ].map(([mode, title]) => ({
+      path: '/auth/' + mode,
+      component: () => import('../pages/AuthPage.vue'),
+      props: { mode },
+      meta: { title },
+    })),
     ...pending.map(([path, title]) => ({
       path,
       component: PlaceholderPage,
