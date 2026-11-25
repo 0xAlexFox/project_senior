@@ -42,11 +42,41 @@
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;
+  --space-14: 56px;
+  --space-15: 60px;
+  --space-16: 64px;
+  --space-18: 72px;
+  --space-19: 76px;
+  --space-20: 80px;
+  --content-max: 1200px;
+  --sidebar-width: 208px;
+  --layout-gap: 32px;
+  --card-gap: 24px;
+  --form-gap: 20px;
+  --field-gap: 8px;
+  --message-gap: 6px;
+  --panel-padding: 24px;
+  --control-height: 48px;
+  --icon-target: 44px;
+  --font-page: 2.25rem;
+  --font-section: 1.5rem;
+  --font-card: 1.125rem;
+  --font-panel: 1.25rem;
+  --font-label: 0.875rem;
+  --font-caption: 0.8125rem;
+  --font-code-size: 0.875rem;
   --section-gap: 72px;
   --radius-control: 10px;
   --radius-panel: 24px;
   --radius-hero: 40px;
   --radius-pill: 9999px;
+}
+@media (max-width: 1199px) {
+  :root {
+    --font-page: 1.75rem;
+    --font-section: 1.375rem;
+    --section-gap: 56px;
+  }
 }
 @media (prefers-color-scheme: light) {
   :root {
