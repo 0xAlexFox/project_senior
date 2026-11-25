@@ -41,3 +41,29 @@
     display: none;
   }
 }
+
+.desktop-profile {
+  position: relative;
+}
+.desktop-profile summary {
+  list-style: none;
+  cursor: pointer;
+}
+.desktop-profile summary::-webkit-details-marker {
+  display: none;
+}
+.profile-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 248px;
+  max-width: calc(100vw - 32px);
+  padding: 20px;
+  z-index: 25;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .desktop-profile {
+    display: none;
+  }
+}

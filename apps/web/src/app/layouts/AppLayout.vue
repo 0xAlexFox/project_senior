@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppIcon from '../../shared/ui/AppIcon.vue'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import AccountLayout from './AccountLayout.vue'
@@ -10,6 +10,8 @@ import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
 import { demo, demoApi } from '../../shared/api/demo-client.js'
 import { clearConversionDraft } from '../../features/conversion/model.js'
 const route = useRoute()
+const router = useRouter()
+const profileMenu = ref(null)
 const auth = computed(() => route.path.startsWith('/auth/'))
 const account = computed(() => /^\/account(?:\/|$)/.test(route.path))
 const menuOpen = ref(false)
@@ -22,11 +24,14 @@ watch(
 function signOut() {
   demoApi.signOut()
   menuOpen.value = false
+  if (profileMenu.value) profileMenu.value.open = false
+  router.push('/auth/login')
 }
 watch(
   () => route.fullPath,
   () => {
     menuOpen.value = false
+    if (profileMenu.value) profileMenu.value.open = false
   },
 )
 </script>
@@ -50,7 +55,22 @@ watch(
       ><span class="mobile-back">Назад</span>
     </RouterLink>
     <template v-else>
+      <details
+        v-if="demo.enabled && demo.viewer"
+        ref="profileMenu"
+        class="desktop-profile"
+        @keydown.esc="profileMenu.open = false"
+      >
+        <summary class="button button-secondary">Кабинет</summary>
+        <div class="panel stack profile-menu">
+          <p>{{ demo.profile.displayName }}</p>
+          <RouterLink to="/account">Обзор</RouterLink
+          ><RouterLink to="/account/settings">Настройки</RouterLink
+          ><BaseButton variant="text" @click="signOut">Выйти</BaseButton>
+        </div>
+      </details>
       <RouterLink
+        v-else
         :to="demo.enabled && demo.viewer ? '/account' : '/auth/login'"
         class="button button-secondary desktop-login"
         >{{ demo.enabled && demo.viewer ? 'Кабинет' : 'Войти' }}</RouterLink

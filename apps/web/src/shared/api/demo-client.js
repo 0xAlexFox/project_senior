@@ -347,13 +347,13 @@ export const demoApi = {
       { ...options, publicAction: true },
     ),
   profile: (options) => respond(profileResponse, options),
-  updateSaving: (value, version) =>
+  updateSaving: (value, version, options) =>
     respond(() => {
       if (version !== demo.version) throw new DemoError('SETTINGS_CONFLICT')
       demo.saveToProfile = value === true
       demo.version += 1
       return profileResponse()
-    }),
+    }, options),
   updateProfile: (profile, version) =>
     respond(() => {
       if (version !== demo.version) throw new DemoError('SETTINGS_CONFLICT')
