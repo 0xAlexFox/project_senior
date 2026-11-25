@@ -67,7 +67,7 @@ test('вспомогательные кнопки формы не запуска
   await expect(
     form.getByRole('button', { name: 'Войти и продолжить' }),
   ).toBeDisabled()
-  await form.getByRole('button', { name: 'Документы', exact: true }).click()
+  await form.getByRole('tab', { name: 'Документы', exact: true }).click()
   await expect(page).toHaveURL('/')
   await expect(
     page.getByText('DOCX · до 20 MiB', { exact: true }),

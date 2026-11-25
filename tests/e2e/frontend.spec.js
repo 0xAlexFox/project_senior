@@ -87,7 +87,7 @@ test('смена направления сохраняет несовмести�
   await expect(
     page.getByText('Прозрачность заменится белым фоном.', { exact: false }),
   ).toBeVisible()
-  await page.getByRole('button', { name: 'Документы', exact: true }).click()
+  await page.getByRole('tab', { name: 'Документы', exact: true }).click()
   await expect(
     page.getByText('Сложное оформление', { exact: false }),
   ).toBeVisible()

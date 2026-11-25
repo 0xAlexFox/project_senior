@@ -1,13 +1,15 @@
 <script setup>
-defineProps({
+const props = defineProps({
   id: { type: String, required: true },
   label: { type: String, required: true },
   options: { type: Array, required: true },
   panelId: { type: String, default: '' },
+  disabled: { type: Boolean, default: false },
 })
 const model = defineModel({ type: String, required: true })
 const buttons = []
 function move(event, index, options) {
+  if (props.disabled) return
   const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End']
   if (!keys.includes(event.key)) return
   event.preventDefault()
@@ -31,6 +33,7 @@ function move(event, index, options) {
       :key="option.value"
       :ref="(el) => (buttons[index] = el)"
       type="button"
+      :disabled="disabled"
       role="tab"
       :aria-selected="model === option.value"
       :aria-controls="panelId || undefined"

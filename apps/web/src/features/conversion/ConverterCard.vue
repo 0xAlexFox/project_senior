@@ -1,10 +1,13 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 import { useConversionDraft, formatBytes } from './model.js'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import AppIcon from '../../shared/ui/AppIcon.vue'
 import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
+import BaseTabs from '../../shared/ui/BaseTabs.vue'
+import { demo, demoApi } from '../../shared/api/demo-client.js'
+import { previewFormats } from '../../shared/api/preview-formats.js'
 const {
   selectedFile,
   direction,
@@ -13,11 +16,50 @@ const {
   selectFiles,
   removeFile,
   changeDirection,
+  formats,
+  job,
+  pending,
+  requestError,
+  startConversion,
 } = useConversionDraft()
 const router = useRouter()
 const input = ref(null)
 const dragging = ref(false)
 const images = computed(() => direction.value.category === 'images')
+const category = computed({
+  get: () => direction.value.category,
+  set: (value) =>
+    changeDirection(value === 'images' ? 'jpg_to_png' : 'docx_to_pdf'),
+})
+const locked = computed(() => pending.value || !!job.value)
+const configReady = ref(true)
+const configError = ref('')
+let configController
+async function loadConfig() {
+  configController?.abort()
+  configController = new AbortController()
+  const controller = configController
+  if (!demo.enabled) {
+    formats.value = previewFormats
+    configReady.value = true
+    configError.value = ''
+    return
+  }
+  configReady.value = false
+  configError.value = ''
+  try {
+    const response = await demoApi.formats({ signal: controller.signal })
+    if (!controller.signal.aborted) {
+      formats.value = response.formats
+      configReady.value = true
+    }
+  } catch (error) {
+    if (!controller.signal.aborted) configError.value = error.message
+  }
+}
+onMounted(loadConfig)
+watch(() => demo.enabled, loadConfig)
+onBeforeUnmount(() => configController?.abort())
 function choose(event) {
   selectFiles(Array.from(event.target.files || []))
   event.target.value = ''
@@ -27,9 +69,8 @@ function drop(event) {
   selectFiles(Array.from(event.dataTransfer.files))
 }
 function submit() {
-  // Keep this guard even when the disabled button is bypassed by requestSubmit().
-  // The future upload should use the selected File from the in-memory draft.
-  if (!canContinue.value) return
+  if (!canContinue.value || locked.value || !configReady.value) return
+  if (demo.enabled && demo.viewer) return startConversion(demo.saveToProfile)
   return router.push('/auth/login')
 }
 </script>
@@ -41,100 +82,137 @@ function submit() {
     novalidate
     @submit.prevent="submit"
   >
-    <div class="format-tabs" role="group" aria-label="Тип конвертации">
-      <button
-        type="button"
-        :aria-pressed="images"
-        @click="!images && changeDirection('jpg_to_png')"
-      >
-        Изображения
-      </button>
-      <button
-        type="button"
-        :aria-pressed="!images"
-        @click="changeDirection('docx_to_pdf')"
-      >
-        Документы
-      </button>
-    </div>
-    <label v-if="images" class="sr-only" for="conversion-direction"
-      >Направление конвертации</label
-    >
-    <select
-      v-if="images"
-      id="conversion-direction"
-      :value="direction.id"
-      class="control"
-      @change="changeDirection($event.target.value)"
-    >
-      <option value="jpg_to_png">JPG → PNG</option>
-      <option value="png_to_jpg">PNG → JPG</option>
-    </select>
-    <p v-else class="control fixed-direction">DOCX → PDF</p>
-    <NoticeMessage v-if="direction.warning" tone="warning">{{
-      direction.warning
-    }}</NoticeMessage>
-    <input
-      ref="input"
-      class="sr-only"
-      type="file"
-      tabindex="-1"
-      :accept="direction.accept"
-      aria-label="Файл для конвертации"
-      @change="choose"
+    <BaseTabs
+      id="conversion-tools"
+      v-model="category"
+      label="Тип конвертации"
+      panel-id="conversion-panel"
+      :disabled="locked"
+      :options="[
+        { value: 'images', label: 'Изображения' },
+        { value: 'documents', label: 'Документы' },
+      ]"
     />
     <div
-      class="dropzone"
-      :class="{ 'is-dragging': dragging, 'has-error': fileError }"
-      @dragover.prevent="dragging = true"
-      @dragleave.self="dragging = false"
-      @drop.prevent="drop"
+      id="conversion-panel"
+      class="stack"
+      role="tabpanel"
+      :aria-labelledby="`conversion-tools-${category}`"
     >
-      <template v-if="selectedFile">
-        <AppIcon name="file" :size="28" />
-        <p class="file-name">{{ selectedFile.name }}</p>
-        <p class="caption">
-          {{ formatBytes(selectedFile.size) }} · {{ direction.label }}
-        </p>
-        <div class="file-actions">
-          <BaseButton variant="secondary" @click="input.click()"
-            >Заменить</BaseButton
-          ><BaseButton variant="text" @click="removeFile">Убрать</BaseButton>
-        </div>
-      </template>
-      <template v-else>
-        <AppIcon name="upload" :size="32" />
-        <p>
-          <span v-if="dragging">Отпустите файл</span
-          ><span v-else class="desktop-drop-copy"
-            >Перетащите один файл сюда</span
-          ><span v-if="!dragging" class="mobile-drop-copy"
-            >Выберите один файл</span
+      <NoticeMessage v-if="configError" tone="danger"
+        >{{ configError
+        }}<BaseButton variant="text" @click="loadConfig"
+          >Повторить загрузку настроек</BaseButton
+        ></NoticeMessage
+      >
+      <p v-if="!configReady && !configError" role="status" class="caption">
+        Загружаем учебные настройки…
+      </p>
+      <label v-if="images" class="sr-only" for="conversion-direction"
+        >Направление конвертации</label
+      >
+      <select
+        v-if="images"
+        id="conversion-direction"
+        :value="direction.id"
+        class="control"
+        :disabled="locked"
+        @change="changeDirection($event.target.value)"
+      >
+        <option value="jpg_to_png">JPG → PNG</option>
+        <option value="png_to_jpg">PNG → JPG</option>
+      </select>
+      <p v-else class="control fixed-direction">DOCX → PDF</p>
+      <NoticeMessage v-if="direction.warning" tone="warning">{{
+        direction.warning
+      }}</NoticeMessage>
+      <input
+        ref="input"
+        class="sr-only"
+        type="file"
+        tabindex="-1"
+        :accept="direction.accept"
+        aria-label="Файл для конвертации"
+        :disabled="locked"
+        @change="choose"
+      />
+      <div
+        class="dropzone"
+        :class="{ 'is-dragging': dragging, 'has-error': fileError }"
+        @dragover.prevent="dragging = true"
+        @dragleave.self="dragging = false"
+        @drop.prevent="drop"
+      >
+        <template v-if="selectedFile">
+          <AppIcon name="file" :size="28" />
+          <p class="file-name">{{ selectedFile.name }}</p>
+          <p class="caption">
+            {{ formatBytes(selectedFile.size) }} · {{ direction.label }}
+          </p>
+          <div class="file-actions">
+            <BaseButton
+              variant="secondary"
+              :disabled="locked"
+              @click="input.click()"
+              >Заменить</BaseButton
+            ><BaseButton variant="text" :disabled="locked" @click="removeFile"
+              >Убрать</BaseButton
+            >
+          </div>
+        </template>
+        <template v-else>
+          <AppIcon name="upload" :size="32" />
+          <p>
+            <span v-if="dragging">Отпустите файл</span
+            ><span v-else class="desktop-drop-copy"
+              >Перетащите один файл сюда</span
+            ><span v-if="!dragging" class="mobile-drop-copy"
+              >Выберите один файл</span
+            >
+          </p>
+          <p class="caption">
+            {{ direction.inputLabel }} · до {{ direction.limitLabel }}
+          </p>
+          <BaseButton
+            variant="secondary"
+            class="full-width"
+            :disabled="locked"
+            @click="input.click()"
+            >Выбрать файл</BaseButton
           >
-        </p>
-        <p class="caption">
-          {{ direction.inputLabel }} · до {{ direction.limitLabel }}
-        </p>
-        <BaseButton
-          variant="secondary"
-          class="full-width"
-          @click="input.click()"
-          >Выбрать файл</BaseButton
-        >
-      </template>
+        </template>
+      </div>
+      <NoticeMessage v-if="fileError" tone="danger">{{
+        fileError
+      }}</NoticeMessage>
     </div>
-    <NoticeMessage v-if="fileError" tone="danger">{{
-      fileError
-    }}</NoticeMessage>
     <p id="continue-help" class="caption secondary">
-      Для запуска войдите. Выбранный файл останется в этой вкладке.
+      <template v-if="demo.enabled && demo.viewer"
+        >Сохранять результат в профиле:
+        {{ demo.saveToProfile ? 'включено' : 'выключено' }}.
+        <RouterLink to="/account">Изменить в кабинете</RouterLink>. Учебный
+        запуск не отправляет исходный файл.</template
+      >
+      <template v-else
+        >Для запуска войдите. Выбранный файл останется в этой вкладке.</template
+      >
     </p>
     <BaseButton
       type="submit"
       class="full-width"
-      :disabled="!canContinue"
+      :disabled="!canContinue || locked || !configReady"
+      :loading="pending"
       aria-describedby="continue-help"
-      >Войти и продолжить</BaseButton
+      >{{
+        demo.enabled && demo.viewer ? 'Конвертировать' : 'Войти и продолжить'
+      }}</BaseButton
+    >
+    <NoticeMessage v-if="requestError" tone="danger">{{
+      requestError.message
+    }}</NoticeMessage>
+    <NoticeMessage v-if="job"
+      >Учебный ответ: задача принята, в очереди. Исходный файл не
+      отправлялся.</NoticeMessage
     >
     <p class="caption">
       Без сохранения результат доступен 1 час после готовности. Скачивание —

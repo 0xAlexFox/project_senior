@@ -8,10 +8,17 @@ import { accountLinks } from '../../shared/config/navigation.js'
 import PreviewControls from '../preview/PreviewControls.vue'
 import NoticeMessage from '../../shared/ui/NoticeMessage.vue'
 import { demo, demoApi } from '../../shared/api/demo-client.js'
+import { clearConversionDraft } from '../../features/conversion/model.js'
 const route = useRoute()
 const auth = computed(() => route.path.startsWith('/auth/'))
 const account = computed(() => /^\/account(?:\/|$)/.test(route.path))
 const menuOpen = ref(false)
+watch(
+  () => demo.viewer,
+  (viewer, previous) => {
+    if (previous && !viewer) clearConversionDraft()
+  },
+)
 function signOut() {
   demoApi.signOut()
   menuOpen.value = false

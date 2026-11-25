@@ -1,4 +1,8 @@
 export function formatBytes(bytes) {
+  if (bytes < 1024) {
+    const form = new Intl.PluralRules('ru-RU').select(bytes)
+    return `${new Intl.NumberFormat('ru-RU').format(bytes)} ${form === 'one' ? 'байт' : form === 'few' ? 'байта' : 'байт'}`
+  }
   return bytes < 1024 * 1024
     ? `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(bytes / 1024)} KiB`
     : `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(bytes / (1024 * 1024))} MiB`
