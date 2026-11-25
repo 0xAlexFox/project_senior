@@ -3,8 +3,11 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import AppIcon from '../../shared/ui/AppIcon.vue'
 import BaseButton from '../../shared/ui/BaseButton.vue'
+import AccountLayout from './AccountLayout.vue'
+import { accountLinks } from '../../shared/config/navigation.js'
 const route = useRoute()
 const auth = computed(() => route.path.startsWith('/auth/'))
+const account = computed(() => /^\/account(?:\/|$)/.test(route.path))
 const menuOpen = ref(false)
 watch(
   () => route.fullPath,
@@ -52,12 +55,22 @@ watch(
       >
         <RouterLink to="/">Конвертер</RouterLink>
         <RouterLink to="/api-docs">Документация API</RouterLink>
+        <template v-if="account">
+          <RouterLink
+            v-for="link in accountLinks"
+            :key="link.to"
+            :to="link.to"
+            :aria-current="route.path === link.to ? 'page' : undefined"
+            >{{ link.label }}</RouterLink
+          >
+        </template>
         <RouterLink to="/auth/login">Войти</RouterLink>
       </nav>
     </template>
   </header>
   <main id="main-content" tabindex="-1" :class="{ 'auth-main': auth }">
-    <slot />
+    <AccountLayout v-if="account"><slot /></AccountLayout>
+    <slot v-else />
   </main>
   <footer v-if="!auth" class="site-footer container">
     <RouterLink to="/privacy">Конфиденциальность</RouterLink>

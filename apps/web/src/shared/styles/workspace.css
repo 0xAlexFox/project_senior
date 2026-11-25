@@ -1,0 +1,43 @@
+.account-frame {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  gap: var(--layout-gap);
+  align-items: start;
+  margin-top: 56px;
+}
+.account-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.account-navigation .is-current,
+.mobile-nav a[aria-current='page'] {
+  background: var(--color-action);
+  color: var(--color-on-action);
+}
+.account-content {
+  min-width: 0;
+}
+.account-content .placeholder-page {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+@media (max-width: 1199px) {
+  .account-frame {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--card-gap);
+    margin-top: 40px;
+  }
+  .account-navigation {
+    flex-flow: row wrap;
+  }
+  .account-navigation a {
+    flex: 1 1 auto;
+  }
+}
+@media (max-width: 767px) {
+  .account-sidebar {
+    display: none;
+  }
+}
