@@ -13,31 +13,30 @@ const steps = ['Выберите файл', 'Запустите конверта
 <template>
   <div class="home-page">
     <section class="hero" aria-labelledby="home-title">
-      <div class="hero-copy">
-        <p class="hero-formats caption">JPG · PNG · DOCX → PDF</p>
-        <h1 id="home-title">
-          <span>Конвертируйте файлы.</span>{{ ' '
-          }}<span>Продолжайте работу.</span>
-        </h1>
-        <p class="hero-description">
-          <span class="desktop-description"
-            >Изображения JPG и PNG, документы DOCX в PDF. Результат можно
-            скачать или сохранить в личном кабинете.</span
-          ><span class="mobile-description"
-            >JPG и PNG, DOCX в PDF. Скачайте результат или сохраните в
-            кабинете.</span
+      <div class="hero-intro">
+        <div class="hero-copy">
+          <p class="hero-formats caption">JPG · PNG · DOCX → PDF</p>
+          <h1 id="home-title">Конвертировать просто!</h1>
+          <p class="hero-description">
+            <span class="desktop-description"
+              >Изображения JPG и PNG, документы DOCX в PDF. Результат можно
+              скачать или сохранить в личном кабинете.</span
+            ><span class="mobile-description"
+              >JPG и PNG, DOCX в PDF. Скачайте результат или сохраните в
+              кабинете.</span
+            >
+          </p>
+        </div>
+        <div class="hero-facts">
+          <p v-for="[icon, text] in facts" :key="text" class="fact">
+            <AppIcon :name="icon" :size="20" /><span>{{ text }}</span>
+          </p>
+          <RouterLink to="/api-docs" class="api-link"
+            >Как работает API <span aria-hidden="true">→</span></RouterLink
           >
-        </p>
+        </div>
       </div>
       <ConverterCard />
-      <div class="hero-facts">
-        <p v-for="[icon, text] in facts" :key="text" class="fact">
-          <AppIcon :name="icon" :size="20" /><span>{{ text }}</span>
-        </p>
-        <RouterLink to="/api-docs" class="api-link"
-          >Как работает API <span aria-hidden="true">→</span></RouterLink
-        >
-      </div>
       <aside class="mobile-summary">
         <p>Просто и по делу</p>
         <p class="caption secondary">

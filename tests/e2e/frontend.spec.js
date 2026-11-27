@@ -15,7 +15,7 @@ test('главная: содержимое, отсутствие ошибок и
   await page.goto('/')
   await expect(page).toHaveTitle('Конвертер файлов')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Конвертируйте файлы. Продолжайте работу.',
+    'Конвертировать просто!',
   )
   await expect(
     page.getByRole('button', { name: 'Войти и продолжить' }),
