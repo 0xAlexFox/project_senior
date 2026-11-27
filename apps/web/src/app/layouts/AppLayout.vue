@@ -49,7 +49,11 @@ watch(
 
 <template>
   <a class="skip-link" href="#main-content">К содержимому</a>
-  <header class="site-header container" @keydown.esc="menuOpen = false">
+  <header
+    class="site-header container"
+    :class="{ 'site-header-auth': auth }"
+    @keydown.esc="menuOpen = false"
+  >
     <RouterLink to="/" class="brand" aria-label="Конвертер — главная">
       <AppIcon name="arrow0" :size="24" /><span>Конвертер</span>
     </RouterLink>
@@ -57,70 +61,72 @@ watch(
       <RouterLink to="/">Конвертер</RouterLink>
       <RouterLink to="/api-docs">Документация API</RouterLink>
     </nav>
-    <ThemeSelector />
-    <RouterLink
-      v-if="auth"
-      to="/"
-      class="button button-secondary header-action"
-    >
-      <span class="desktop-back">К конвертеру</span
-      ><span class="mobile-back">Назад</span>
-    </RouterLink>
-    <template v-else>
-      <details
-        v-if="demo.enabled && demo.viewer"
-        ref="profileMenu"
-        class="desktop-profile"
-        @keydown.esc="closeProfile"
-      >
-        <summary class="button button-secondary">Кабинет</summary>
-        <div class="panel stack profile-menu">
-          <p>{{ demo.profile.displayName }}</p>
-          <RouterLink to="/account">Обзор</RouterLink
-          ><RouterLink to="/account/settings">Настройки</RouterLink
-          ><BaseButton variant="text" @click="signOut">Выйти</BaseButton>
-        </div>
-      </details>
+    <div class="header-actions">
+      <ThemeSelector />
       <RouterLink
-        v-else
-        :to="demo.enabled && demo.viewer ? '/account' : '/auth/login'"
-        class="button button-secondary desktop-login"
-        >{{ demo.enabled && demo.viewer ? 'Кабинет' : 'Войти' }}</RouterLink
+        v-if="auth"
+        to="/"
+        class="button button-secondary header-action"
       >
-      <BaseButton
-        class="mobile-menu-button"
-        variant="secondary"
-        :aria-expanded="menuOpen"
-        aria-controls="mobile-nav"
-        @click="menuOpen = !menuOpen"
-        >{{ menuOpen ? 'Закрыть' : 'Меню' }}</BaseButton
-      >
-      <nav
-        v-if="menuOpen"
-        id="mobile-nav"
-        class="mobile-nav"
-        aria-label="Мобильная навигация"
-      >
-        <RouterLink to="/">Конвертер</RouterLink>
-        <RouterLink to="/api-docs">Документация API</RouterLink>
-        <template v-if="account">
-          <RouterLink
-            v-for="link in accountLinks"
-            :key="link.to"
-            :to="link.to"
-            :aria-current="route.path === link.to ? 'page' : undefined"
-            >{{ link.label }}</RouterLink
-          >
-        </template>
-        <RouterLink v-if="!demo.viewer" to="/auth/login">Войти</RouterLink>
-        <template v-else
-          ><RouterLink to="/account">Кабинет</RouterLink
-          ><BaseButton variant="text" @click="signOut"
-            >Выйти из учебного кабинета</BaseButton
-          ></template
+        <span class="desktop-back">К конвертеру</span
+        ><span class="mobile-back">Назад</span>
+      </RouterLink>
+      <template v-else>
+        <details
+          v-if="demo.enabled && demo.viewer"
+          ref="profileMenu"
+          class="desktop-profile"
+          @keydown.esc="closeProfile"
         >
-      </nav>
-    </template>
+          <summary class="button button-secondary">Кабинет</summary>
+          <div class="panel stack profile-menu">
+            <p>{{ demo.profile.displayName }}</p>
+            <RouterLink to="/account">Обзор</RouterLink
+            ><RouterLink to="/account/settings">Настройки</RouterLink
+            ><BaseButton variant="text" @click="signOut">Выйти</BaseButton>
+          </div>
+        </details>
+        <RouterLink
+          v-else
+          :to="demo.enabled && demo.viewer ? '/account' : '/auth/login'"
+          class="button button-secondary desktop-login"
+          >{{ demo.enabled && demo.viewer ? 'Кабинет' : 'Войти' }}</RouterLink
+        >
+        <BaseButton
+          class="mobile-menu-button"
+          variant="secondary"
+          :aria-expanded="menuOpen"
+          aria-controls="mobile-nav"
+          @click="menuOpen = !menuOpen"
+          >{{ menuOpen ? 'Закрыть' : 'Меню' }}</BaseButton
+        >
+        <nav
+          v-if="menuOpen"
+          id="mobile-nav"
+          class="mobile-nav"
+          aria-label="Мобильная навигация"
+        >
+          <RouterLink to="/">Конвертер</RouterLink>
+          <RouterLink to="/api-docs">Документация API</RouterLink>
+          <template v-if="account">
+            <RouterLink
+              v-for="link in accountLinks"
+              :key="link.to"
+              :to="link.to"
+              :aria-current="route.path === link.to ? 'page' : undefined"
+              >{{ link.label }}</RouterLink
+            >
+          </template>
+          <RouterLink v-if="!demo.viewer" to="/auth/login">Войти</RouterLink>
+          <template v-else
+            ><RouterLink to="/account">Кабинет</RouterLink
+            ><BaseButton variant="text" @click="signOut"
+              >Выйти из учебного кабинета</BaseButton
+            ></template
+          >
+        </nav>
+      </template>
+    </div>
   </header>
   <NoticeMessage v-if="demo.enabled" class="preview-banner container"
     >Учебная версия. Данные вымышлены; сервер, авторизация и конвертация не
