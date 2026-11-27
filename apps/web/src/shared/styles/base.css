@@ -56,9 +56,10 @@ h3 {
 }
 :focus-visible {
   outline: 2px solid var(--color-focus);
-  outline-offset: 4px;
+  outline-offset: 3px;
 }
-main:focus {
+main:focus,
+main h1[tabindex='-1']:focus {
   outline: none;
 }
 .container {
@@ -156,10 +157,25 @@ main:focus {
   line-height: 1.5;
 }
 select.control {
-  padding-right: 40px;
+  appearance: none;
+  padding-right: 48px;
+  background-image: var(--select-indicator);
+  background-position: right 21px center;
+  background-size: 16px 16px;
+  background-repeat: no-repeat;
+}
+@media (forced-colors: active) {
+  select.control {
+    appearance: auto;
+    background-image: none;
+    padding-right: 12px;
+  }
 }
 .control[aria-invalid='true'] {
   border-color: var(--color-danger);
+}
+.control:disabled {
+  cursor: not-allowed;
 }
 .panel {
   background: var(--color-surface);

@@ -8,6 +8,7 @@
 }
 :root {
   color-scheme: dark;
+  --select-indicator: url('../assets/select-chevron-dark.svg');
   --color-canvas: #0a0a0a;
   --color-surface: #161616;
   --color-surface-raised: #202020;
@@ -80,6 +81,7 @@
 }
 :root[data-theme='light'] {
   color-scheme: light;
+  --select-indicator: url('../assets/select-chevron-light.svg');
   --color-canvas: #f5f6f8;
   --color-surface: #ffffff;
   --color-surface-raised: #ebedf0;
