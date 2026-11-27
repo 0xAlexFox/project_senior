@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import ThemeSelector from '../../features/appearance/ThemeSelector.vue'
 import AppIcon from '../../shared/ui/AppIcon.vue'
 import BaseButton from '../../shared/ui/BaseButton.vue'
 import AccountLayout from './AccountLayout.vue'
@@ -120,6 +121,7 @@ watch(
       </nav>
     </template>
   </header>
+  <ThemeSelector />
   <NoticeMessage v-if="demo.enabled" class="preview-banner container"
     >Учебная версия. Данные вымышлены; сервер, авторизация и конвертация не
     подключены.</NoticeMessage
