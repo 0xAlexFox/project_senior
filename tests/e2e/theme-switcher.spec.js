@@ -1,6 +1,20 @@
 import { test, expect } from '@playwright/test'
 const selector = (page) =>
-  page.getByRole('combobox', { name: 'Тема оформления', exact: true })
+  page.getByRole('switch', { name: 'Тёмная тема', exact: true })
+async function choose(page, value) {
+  if (value === 'system') {
+    if ((await page.locator('.theme-options').getAttribute('open')) === null)
+      await page.locator('.theme-options > summary').click()
+    await page
+      .getByRole('button', { name: 'Следовать системе', exact: true })
+      .click()
+  } else if (
+    (await selector(page).getAttribute('aria-checked')) !==
+    String(value === 'dark')
+  ) {
+    await selector(page).click()
+  }
+}
 const background = (page) =>
   page
     .locator('body')
@@ -11,24 +25,36 @@ test('системная тема меняется с ОС, ручная сох�
 }) => {
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.goto('/')
-  await expect(selector(page)).toHaveValue('system')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'system',
+  )
   expect(await page.evaluate(() => localStorage.length)).toBe(0)
   expect(await background(page)).toBe('rgb(10, 10, 10)')
   await page.emulateMedia({ colorScheme: 'light' })
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
-  await selector(page).selectOption('dark')
+  await choose(page, 'dark')
   expect(await background(page)).toBe('rgb(10, 10, 10)')
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.emulateMedia({ colorScheme: 'light' })
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await page.getByRole('link', { name: 'Войти', exact: true }).click()
-  await expect(selector(page)).toHaveValue('dark')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'dark',
+  )
   await page.reload()
-  await expect(selector(page)).toHaveValue('dark')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'dark',
+  )
   expect(await background(page)).toBe('rgb(10, 10, 10)')
-  await selector(page).selectOption('light')
+  await choose(page, 'light')
   await page.reload()
-  await expect(selector(page)).toHaveValue('light')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'light',
+  )
   expect(await background(page)).toBe('rgb(245, 246, 248)')
 })
 
@@ -69,13 +95,16 @@ test('отказ хранилища не мешает изменению тем�
   )
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('/auth/login')
-  await expect(selector(page)).toHaveValue('system')
-  await selector(page).selectOption('dark')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'system',
+  )
+  await choose(page, 'dark')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await expect(
     page.getByText('Тема изменена только в этой вкладке:', { exact: false }),
   ).toBeVisible()
-  await selector(page).selectOption('system')
+  await choose(page, 'system')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
 })
 
@@ -90,11 +119,17 @@ test('вкладки синхронизируются, системный реж
   try {
     await other.emulateMedia({ colorScheme: 'light' })
     await other.goto('/')
-    await selector(other).selectOption('dark')
-    await expect(selector(page)).toHaveValue('dark')
+    await choose(other, 'dark')
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-theme-preference',
+      'dark',
+    )
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-    await selector(page).selectOption('system')
-    await expect(selector(other)).toHaveValue('system')
+    await choose(page, 'system')
+    await expect(other.locator('html')).toHaveAttribute(
+      'data-theme-preference',
+      'system',
+    )
     await expect(other.locator('html')).toHaveAttribute('data-theme', 'light')
     expect(
       await page.evaluate(() => ({
@@ -129,8 +164,11 @@ test('Tab-фокус, 360 px/200% и тема после учебного вых
       (node) => getComputedStyle(node).outlineStyle,
     ),
   ).not.toBe('none')
-  await selector(page).selectOption('light')
-  await expect(selector(page)).toHaveValue('light')
+  await choose(page, 'light')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'light',
+  )
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -138,7 +176,92 @@ test('Tab-фокус, 360 px/200% и тема после учебного вых
   ).toBe(true)
   await page.getByRole('button', { name: 'Открыть учебный кабинет' }).click()
   await expect(page).toHaveURL('/account')
-  await expect(selector(page)).toHaveValue('light')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'light',
+  )
   await page.getByRole('button', { name: 'Отключить учебные ответы' }).click()
-  await expect(selector(page)).toHaveValue('light')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'light',
+  )
+})
+
+test('переключатель в шапке слева от действий, без пересечений на основных ширинах', async ({
+  page,
+}) => {
+  for (const width of [320, 360, 390, 430, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    for (const route of ['/', '/auth/login']) {
+      await page.goto(route)
+      const header = page.locator('.site-header')
+      const control = await selector(page).boundingBox()
+      const action = await header
+        .locator(
+          route === '/'
+            ? width < 768
+              ? '.mobile-menu-button'
+              : '.desktop-login'
+            : '.header-action',
+        )
+        .boundingBox()
+      const box = await header.boundingBox()
+      expect(control.x + control.width).toBeLessThanOrEqual(action.x)
+      expect(
+        Math.abs(
+          control.y + control.height / 2 - (action.y + action.height / 2),
+        ),
+      ).toBeLessThan(2)
+      expect(control.y).toBeGreaterThanOrEqual(box.y)
+      expect(control.y + control.height).toBeLessThanOrEqual(box.y + box.height)
+      await header.locator('.theme-options summary').click()
+      const popup = await page.locator('.theme-popover').boundingBox()
+      expect(popup.x).toBeGreaterThanOrEqual(0)
+      expect(popup.x + popup.width).toBeLessThanOrEqual(width)
+      await page.keyboard.press('Escape')
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true)
+    }
+  }
+})
+
+test('Space/Enter меняют тему; меню ОС закрывается Escape, вне меню и по переходу', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' })
+  await page.goto('/')
+  await selector(page).focus()
+  await page.keyboard.press('Space')
+  await expect(selector(page)).toBeChecked()
+  await page.keyboard.press('Enter')
+  await expect(selector(page)).not.toBeChecked()
+  expect(
+    await page
+      .locator('.theme-thumb')
+      .evaluate((n) => getComputedStyle(n).transitionDuration),
+  ).toBe('0s')
+  const summary = page.locator('.theme-options > summary')
+  await summary.focus()
+  await page.keyboard.press('Enter')
+  await expect(
+    page.getByRole('button', { name: 'Следовать системе' }),
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(summary).toBeFocused()
+  await expect(page.locator('.theme-options')).not.toHaveAttribute('open')
+  await summary.click()
+  await page.getByRole('heading', { level: 1 }).click()
+  await expect(page.locator('.theme-options')).not.toHaveAttribute('open')
+  await summary.click()
+  await page.getByRole('link', { name: 'Войти', exact: true }).click()
+  await expect(page.locator('.theme-options')).not.toHaveAttribute('open')
+  await choose(page, 'system')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme-preference',
+    'system',
+  )
+  await expect(summary).toBeFocused()
 })

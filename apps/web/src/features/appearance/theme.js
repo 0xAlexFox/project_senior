@@ -8,15 +8,21 @@ const preference = ref(
     : normalize(document.documentElement.dataset.themePreference),
 )
 const message = ref('')
+const resolvedTheme = ref(
+  typeof document === 'undefined'
+    ? 'dark'
+    : document.documentElement.dataset.theme,
+)
 let media
 function apply() {
   document.documentElement.dataset.themePreference = preference.value
-  document.documentElement.dataset.theme =
+  resolvedTheme.value =
     preference.value === 'system'
       ? media.matches
         ? 'light'
         : 'dark'
       : preference.value
+  document.documentElement.dataset.theme = resolvedTheme.value
 }
 export function initializeTheme() {
   function sync(event) {
@@ -50,5 +56,5 @@ function setTheme(value) {
   }
 }
 export function useTheme() {
-  return { preference, message, setTheme }
+  return { preference, resolvedTheme, message, setTheme }
 }

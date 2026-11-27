@@ -4,6 +4,10 @@ defineProps({
   size: { type: Number, default: 20 },
 })
 const paths = {
+  sun: 'M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  moon: 'M20.5 13.4A8.6 8.6 0 0 1 10.6 3.5a8.6 8.6 0 1 0 9.9 9.9Z',
+  chevron: 'M6 9l6 6 6-6',
+  monitor: 'M3 4h18v13H3ZM8 21h8m-4-4v4',
   arrow0: 'M2 7L22 7M15.75 2L22 7L15.75 12M22 17L2 17M8.25 12L2 17L8.25 22',
   file: 'M11.6 2L18 6.8L18 18L2 18L2 2L11.6 2ZM11.6 2L11.6 6.8L18 6.8M5.2 10.8L14.8 10.8M5.2 14L12.6667 14',
   shield:
@@ -12,7 +16,17 @@ const paths = {
   upload:
     'M16 21.1579L16 2M8.22222 9.36842L16 2L23.7778 9.36842M2 21.1579L2 30L30 30L30 21.1579',
 }
-const boxes = { arrow0: 24, file: 20, shield: 20, key: 20, upload: 32 }
+const boxes = {
+  sun: 24,
+  moon: 24,
+  chevron: 24,
+  monitor: 24,
+  arrow0: 24,
+  file: 20,
+  shield: 20,
+  key: 20,
+  upload: 32,
+}
 </script>
 
 <template>

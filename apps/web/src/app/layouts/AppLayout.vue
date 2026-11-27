@@ -57,6 +57,7 @@ watch(
       <RouterLink to="/">Конвертер</RouterLink>
       <RouterLink to="/api-docs">Документация API</RouterLink>
     </nav>
+    <ThemeSelector />
     <RouterLink
       v-if="auth"
       to="/"
@@ -121,7 +122,6 @@ watch(
       </nav>
     </template>
   </header>
-  <ThemeSelector />
   <NoticeMessage v-if="demo.enabled" class="preview-banner container"
     >Учебная версия. Данные вымышлены; сервер, авторизация и конвертация не
     подключены.</NoticeMessage

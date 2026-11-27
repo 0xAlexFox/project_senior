@@ -396,9 +396,19 @@ for (const theme of ['dark', 'light']) {
     ).toBeVisible()
     await audit('reset-done')
     await enter()
-    await expect(page.getByRole('switch')).toBeVisible()
+    await expect(
+      page.getByRole('switch', {
+        name: 'Сохранять новые результаты в профиле',
+        exact: true,
+      }),
+    ).toBeVisible()
     await fault('SESSION_EXPIRED')
-    await page.getByRole('switch').click()
+    await page
+      .getByRole('switch', {
+        name: 'Сохранять новые результаты в профиле',
+        exact: true,
+      })
+      .click()
     await expect(page).toHaveURL(/\/auth\/login/)
     await expect(
       page.getByText('Учебная сессия истекла.', { exact: false }),

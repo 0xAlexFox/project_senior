@@ -210,7 +210,7 @@ select.control {
 }
 .desktop-nav {
   display: flex;
-  gap: 64px;
+  gap: 24px;
   margin-inline: auto;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
@@ -218,7 +218,6 @@ select.control {
 .desktop-login,
 .header-action {
   min-width: 120px;
-  margin-left: auto;
 }
 .mobile-menu-button,
 .mobile-nav,
@@ -543,7 +542,8 @@ select.control {
   .site-header {
     margin-top: 16px;
     min-height: 56px;
-    padding: 3px 11px 3px 20px;
+    padding: 3px 7px 3px 12px;
+    gap: 8px;
   }
   .brand {
     font-size: 1rem;
@@ -560,7 +560,6 @@ select.control {
   }
   .mobile-menu-button {
     display: inline-flex;
-    margin-left: auto;
   }
   .header-action {
     min-width: 76px;
@@ -602,5 +601,23 @@ select.control {
     scroll-behavior: auto !important;
     animation: none !important;
     transition: none !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 999px) {
+  .desktop-nav {
+    gap: 16px;
+  }
+  .site-header {
+    gap: 12px;
+  }
+  .desktop-login,
+  .header-action {
+    min-width: 88px;
+  }
+}
+@media (max-width: 420px) {
+  .site-header .brand span {
+    display: none;
   }
 }
